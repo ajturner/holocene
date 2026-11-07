@@ -4,7 +4,11 @@ A timeline of human civilization dated in the **Holocene Era (HE)** calendar, wh
 
 The project has two parts:
 
-- **An interactive explorer** ([`index.html`](index.html)): a pan-and-zoom timeline drawn to a true linear scale, with event details, an HE ↔ BCE/CE toggle and a year converter.
+- **An interactive explorer** ([`index.html`](index.html)): a pan-and-zoom timeline drawn to a true linear scale, with two views:
+  - **Milestones:** key events across the span.
+  - **World:** one swimlane per region, showing its states, empires and cultures.
+
+  A movable **"meanwhile" line** reads across every region at a single year. **Surprising comparisons** jump to a view that makes one counterintuitive fact visible. The explorer also has an HE ↔ BCE/CE toggle and a year converter.
 - **A printable poster** ([`poster/`](poster/)): a 17 × 11 in (tabloid, landscape) chart that shows the whole span plus two enlarged sections.
 
 ![Poster: 12,026 Years of Civilization](poster/holocene-poster.png)
@@ -55,7 +59,43 @@ Controls:
 - **Pan:** drag, use a horizontal scroll, or press the ← / → keys.
 - **Zoom:** scroll, pinch, use the + / − buttons, or pick a preset period.
 - **Overview bar:** click or drag to move the view across the full span.
-- **Events:** select any dot or list entry to show its details.
+- **Details:** select a milestone dot, a polity bar, or any list entry.
+- **Meanwhile line:** tap empty space to move it, or step it by ±10, ±100 or ±500 years. The *Meanwhile* panel lists every state and culture in each region at that year, plus the nearest milestone in each region.
+
+Links: add `#world` to the URL to open the world view. Each surprising comparison has its own link, such as `#cleopatra`, `#mammoths`, `#oxford`, `#farming`, `#ottomans` or `#aztec-inca`.
+
+### The world view
+
+![World view with the meanwhile line at 6000 HE](docs/world-view.png)
+
+The world view stacks nine broad regions as rows against the shared time axis:
+
+- Southwest Asia
+- Egypt, Nubia and North Africa
+- Europe and the Mediterranean
+- South Asia
+- China and Inner Asia
+- Korea and Japan
+- Sub-Saharan Africa
+- The Americas
+- Oceania
+
+**Solid** bars are states and empires; **dashed** bars are archaeological cultures or periods. Where two overlap in time within the same region, they stack into extra rows.
+
+The regions are broad groupings for comparison, not historical borders. Start and end dates for cultures and early states are approximate and often debated.
+
+Bar length shows only *duration*. The design draws on two older traditions. Joseph Priestley's 1769 *New Chart of History* stacked regions against a shared time axis. John Sparks's 1931 *Histomap* went further and used band width to show relative power. Encoding power or population as band width is a natural next step, but it needs a defensible data source, such as population estimates by region.
+
+### Surprising comparisons
+
+| Link | Comparison |
+| --- | --- |
+| `#cleopatra` | Cleopatra lived closer to the Moon landing than to the building of the Great Pyramid. |
+| `#mammoths` | Woolly mammoths survived on Wrangel Island until about 8000 HE, after the Great Pyramid was built. |
+| `#oxford` | Teaching at Oxford predates the founding of Tenochtitlan and the Aztec Empire. |
+| `#farming` | People farmed for about 5,700 years before writing appeared. |
+| `#ottomans` | The Ottoman Empire lasted from 11299 HE until after the first airplane flights. |
+| `#aztec-inca` | The Aztec and Inca empires each lasted under a century. |
 
 ### Poster
 
@@ -71,7 +111,10 @@ The layout is fixed at 96 px per inch (1632 × 1056 px). Each row uses its own l
 
 Events live as plain arrays in the `<script>` block of each page:
 
-- `index.html`: the `EV` array, as `[HE year, approximate?, name, description]`.
+- `index.html` has three arrays:
+  - `EV`: milestones, as `[HE year, approximate?, name, region key, description]`.
+  - `REGIONS`: polities and cultures, as `[start HE, end HE, name, kind]`, where kind is `'s'` for a state and `'c'` for a culture.
+  - `STORIES`: the surprising comparisons, each with a view range, markers and measured spans.
 - `poster/poster.html`: the `ROWS` array. Each event also carries a label lane and alignment, because poster labels are placed by hand to avoid collisions.
 
 ## Further reading
@@ -91,6 +134,13 @@ Events live as plain arrays in the `<script>` block of each page:
 - [Indus Valley Civilisation](https://en.wikipedia.org/wiki/Indus_Valley_Civilisation)
 - [Late Bronze Age collapse](https://en.wikipedia.org/wiki/Late_Bronze_Age_collapse)
 - [Cahokia](https://en.wikipedia.org/wiki/Cahokia)
+
+**Timeline design**
+
+- [The Histomap](https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~200375~3001080) (John B. Sparks, Rand McNally, 1931): a scan in the David Rumsey Map Collection. It is the classic "relative power" stream chart of 4,000 years.
+- [Historical timeline visualizations, story maps and changing styles](https://www.xentity.com/historical-timeline-visualizations-story-maps-and-changing-styles/) (Xentity). Covers Priestley, Marey and the Histomap through to modern map-and-time tools.
+- [A New Chart of History](https://en.wikipedia.org/wiki/A_New_Chart_of_History) (Joseph Priestley, 1769): an early synchronoptic chart. "Synchronoptic" means it shows parallel histories side by side on one time axis.
+- *World History Timeline* (Schofield & Sims): a classroom wall chart of regional swimlanes from 3000 BCE to today.
 
 **Urbanization and data**
 

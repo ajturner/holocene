@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: a single deep-time strip you pan and zoom like a map, with an overview bar, a detail card, and the list of what is in view. */
+/* Layout: one deep-time strip you pan and zoom like a map. Two views share the axis: milestones, and a world view of regional swimlanes (after Priestley and the Histomap). A movable "meanwhile" line reads across every region at one year. */
 :root {
   --bg: #EDEFEA;
   --surface: #F8F9F6;
@@ -16,26 +16,39 @@
   --muted: #565C57;
   --rule: #C9CEC6;
   --accent: #2F5D8A;
+  --on-accent: #FFFFFF;
+  --mark: #B23E22;
   --era1: #557538;
   --era2: #8C5F10;
   --era3: #9B4430;
-  --on-era: #FFFFFF;
   --era4: #4A6D92;
   --era5: #3A3550;
+  --on-era: #FFFFFF;
+  --r0: #B5643C;
+  --r1: #B88A1E;
+  --r2: #4F78A8;
+  --r3: #C2577E;
+  --r4: #3E8E6E;
+  --r5: #7A5BA8;
+  --r6: #8A7A26;
+  --r7: #2F8A9A;
+  --r8: #5F7F3A;
   --font-display: "Fraunces", Georgia, "Times New Roman", serif;
   --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #141716; --surface: #1C201E; --ink: #E7EAE5; --muted: #A2A9A3; --rule: #343A37; --accent: #7FB0E0;
+    --bg: #141716; --surface: #1C201E; --ink: #E7EAE5; --muted: #A2A9A3; --rule: #343A37; --accent: #7FB0E0; --on-accent: #10161C; --mark: #F08A68;
     --era1: #86A863; --era2: #D19E45; --era3: #C9725A; --era4: #6F93BA; --era5: #9C93C4; --on-era: #141716;
+    --r0: #D98A62; --r1: #D9B04A; --r2: #7FA4D3; --r3: #E07FA3; --r4: #6CC09C; --r5: #A88BD6; --r6: #BFAE58; --r7: #5EC0CF; --r8: #93B86A;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #141716; --surface: #1C201E; --ink: #E7EAE5; --muted: #A2A9A3; --rule: #343A37; --accent: #7FB0E0;
+  --bg: #141716; --surface: #1C201E; --ink: #E7EAE5; --muted: #A2A9A3; --rule: #343A37; --accent: #7FB0E0; --on-accent: #10161C; --mark: #F08A68;
   --era1: #86A863; --era2: #D19E45; --era3: #C9725A; --era4: #6F93BA; --era5: #9C93C4; --on-era: #141716;
+  --r0: #D98A62; --r1: #D9B04A; --r2: #7FA4D3; --r3: #E07FA3; --r4: #6CC09C; --r5: #A88BD6; --r6: #BFAE58; --r7: #5EC0CF; --r8: #93B86A;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -45,30 +58,41 @@ body {
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 24px 48px;
 }
-.wrap { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.wrap { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
 header { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: end; justify-content: space-between; }
 header .titles { min-width: 0; flex: 1 1 420px; }
 h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.2vw, 44px); line-height: 1.05; margin: 0 0 8px; text-wrap: balance; letter-spacing: -0.01em; }
-header p { margin: 0; color: var(--muted); max-width: 62ch; }
+header p { margin: 0; color: var(--muted); max-width: 64ch; }
 .counter { font-family: var(--font-data); font-size: 13px; color: var(--muted); text-align: right; }
 .counter strong { display: block; font-family: var(--font-display); font-size: 40px; font-weight: 500; color: var(--ink); line-height: 1; letter-spacing: -0.02em; }
 
-.toolbar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chips-label { font-family: var(--font-data); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
 button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { opacity: 0.4; cursor: default; }
 .chip { font-size: 13px; padding: 6px 12px; border: 1px solid var(--rule); background: var(--surface); border-radius: 999px; min-height: 36px; }
 .chip:hover { border-color: var(--muted); }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-.controls { display: flex; gap: 6px; align-items: center; }
+.chip.story { border-style: dashed; border-color: var(--mark); color: var(--mark); }
+.chip.story[aria-pressed="true"] { background: var(--mark); color: var(--surface); border-style: solid; }
+.controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 999px; overflow: hidden; background: var(--surface); }
 .seg button { border: 0; background: transparent; padding: 6px 12px; font-size: 13px; min-height: 36px; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
 .icon-btn { width: 36px; height: 36px; border: 1px solid var(--rule); background: var(--surface); border-radius: 50%; font-size: 18px; line-height: 1; display: inline-grid; place-items: center; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+.story-card { border: 1px solid var(--mark); border-radius: 6px; background: var(--surface); padding: 14px 16px; display: flex; gap: 16px; align-items: start; justify-content: space-between; }
+.story-card .eyebrow { color: var(--mark); }
+.story-card h3 { font-family: var(--font-display); font-size: 22px; font-weight: 700; margin: 4px 0 4px; text-wrap: balance; }
+.story-card p { margin: 0; max-width: 72ch; }
+.story-card > div { min-width: 0; }
+.close { border: 1px solid var(--rule); background: transparent; border-radius: 4px; font-size: 13px; padding: 6px 10px; min-height: 36px; flex: none; }
+
 .stage { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
 .range-line { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; font-family: var(--font-data); font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
-#tl { display: block; width: 100%; height: 400px; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+#tl { display: block; width: 100%; height: 420px; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
 #tl.dragging { cursor: grabbing; }
 .hint { padding: 8px 14px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule); }
 #overview { display: block; width: 100%; height: 44px; cursor: pointer; touch-action: none; }
@@ -79,34 +103,62 @@ svg text { font-family: var(--font-body); }
 .t-tick { font-family: var(--font-data); font-size: 11px; fill: var(--muted); }
 .t-year { font-family: var(--font-data); font-size: 11px; fill: var(--muted); }
 .t-name { font-size: 13px; fill: var(--ink); font-weight: 500; }
-.ev { cursor: pointer; }
+.ev, .pol { cursor: pointer; }
 .ev:hover .t-name, .ev.sel .t-name { fill: var(--accent); }
-.ev .hit { fill: transparent; }
-.ev:focus { outline: none; }
+.hit { fill: transparent; }
+.ev:focus, .pol:focus { outline: none; }
 .ev:focus-visible .dot { stroke: var(--accent); stroke-width: 3; }
 .dot { fill: var(--surface); stroke: var(--ink); stroke-width: 2; }
 .ev.sel .dot { fill: var(--accent); stroke: var(--accent); }
 .stem { stroke: var(--rule); stroke-width: 1; }
 .grid { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 4; }
-.today { stroke: var(--accent); stroke-width: 1.5; }
+.today { stroke: var(--muted); stroke-width: 1; }
 .era-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--on-era); }
+.lane-h { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--muted); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.lane-sep { stroke: var(--rule); stroke-width: 1; }
+.pol-t { font-size: 12px; fill: var(--ink); pointer-events: none; }
+.pol:hover rect, .pol:focus-visible rect { stroke-width: 2.5; }
+.cursor { stroke: var(--accent); stroke-width: 2; }
+.cursor-pill { fill: var(--accent); }
+.cursor-t { font-family: var(--font-data); font-size: 11px; font-weight: 500; fill: var(--on-accent); }
+.mk { stroke: var(--mark); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.mk-t, .sp-t { font-size: 12px; font-weight: 600; fill: var(--mark); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.sp { stroke: var(--mark); stroke-width: 2; fill: none; }
 
-.lower { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
-@media (max-width: 760px) { .lower { grid-template-columns: minmax(0, 1fr); } }
+.lower { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 780px) { .lower { grid-template-columns: minmax(0, 1fr); } }
+.col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 .card { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 20px; min-width: 0; }
 .eyebrow { font-family: var(--font-data); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 8px; }
 .swatch { width: 12px; height: 12px; border-radius: 2px; display: inline-block; flex: none; }
 #d-name { font-family: var(--font-display); font-size: 30px; font-weight: 700; line-height: 1.1; margin: 8px 0 12px; text-wrap: balance; }
 .dates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 14px; padding: 12px 0; border-block: 1px solid var(--rule); }
 .dates dt { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
-.dates dd { margin: 2px 0 0; font-family: var(--font-data); font-size: 16px; font-variant-numeric: tabular-nums; }
+.dates dd { margin: 2px 0 0; font-family: var(--font-data); font-size: 16px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 #d-desc { margin: 0 0 12px; max-width: 62ch; }
 .d-era { font-size: 13px; color: var(--muted); margin: 0; }
 .d-nav { display: flex; gap: 8px; margin-top: 16px; }
 .d-nav button { flex: 1; font-size: 13px; padding: 8px 12px; border: 1px solid var(--rule); background: transparent; border-radius: 4px; min-height: 40px; }
 
-h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin: 0 0 4px; }
+h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin: 0 0 4px; text-wrap: balance; }
 .sub { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+
+.mw-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+.mw-year { font-family: var(--font-data); font-size: 13px; color: var(--muted); }
+.nudge { display: flex; gap: 4px; margin: 0 0 12px; flex-wrap: wrap; }
+.nudge button { font-family: var(--font-data); font-size: 12px; border: 1px solid var(--rule); background: transparent; border-radius: 4px; padding: 4px 8px; min-height: 32px; }
+#mw { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+#mw li { display: grid; grid-template-columns: 10px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--rule); }
+#mw .sw { width: 10px; height: 10px; border-radius: 2px; margin-top: 6px; }
+#mw .rn { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+#mw .pols { font-size: 14px; }
+#mw .pols button { border: 0; background: none; padding: 0; text-align: left; text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+#mw .pols button:hover { text-decoration-color: var(--ink); }
+#mw .pols .st { font-weight: 600; }
+#mw .none { color: var(--muted); }
+#mw .near { font-size: 12px; color: var(--muted); margin-top: 2px; }
+#mw .near button { border: 0; background: none; padding: 0; color: var(--accent); text-align: left; }
+
 #list { list-style: none; margin: 0; padding: 0; max-height: 360px; overflow-y: auto; border-top: 1px solid var(--rule); }
 #list li button { width: 100%; text-align: left; display: grid; grid-template-columns: 8px 88px minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 8px 4px; border: 0; border-bottom: 1px solid var(--rule); background: transparent; font-size: 14px; }
 #list li button:hover { background: var(--bg); }
@@ -123,7 +175,7 @@ h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin
 #conv-out div { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-bottom: 1px dashed var(--rule); }
 #conv-out span:first-child { color: var(--muted); font-family: var(--font-body); font-size: 13px; }
 .conv-go { font-size: 13px; padding: 8px 12px; border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 4px; min-height: 40px; margin-top: 10px; }
-.foot { font-size: 12px; color: var(--muted); }
+.foot { font-size: 12px; color: var(--muted); max-width: 90ch; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -133,7 +185,7 @@ h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin
   <header>
     <div class="titles">
       <h1>12,026 years of civilization</h1>
-      <p>Every date here uses the Holocene Era calendar (HE), where year 1 is 10,000 BCE, around the first permanent settlements. The strip is drawn to a true linear scale: drag to pan, scroll or pinch to zoom.</p>
+      <p>Every date uses the Holocene Era calendar (HE): year 1 is 10,000 BCE, around the first permanent settlements. The timeline is drawn to a true linear scale. Drag to pan, scroll or pinch to zoom, and tap anywhere to move the “meanwhile” line.</p>
     </div>
     <div class="counter"><strong>12026</strong>HE · this year</div>
   </header>
@@ -141,6 +193,10 @@ h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin
   <div class="toolbar">
     <div class="chips" id="presets" role="group" aria-label="Jump to a period"></div>
     <div class="controls">
+      <div class="seg" role="group" aria-label="View">
+        <button type="button" id="view-ms" aria-pressed="true">Milestones</button>
+        <button type="button" id="view-world" aria-pressed="false">World</button>
+      </div>
       <div class="seg" role="group" aria-label="Date style">
         <button type="button" id="mode-he" aria-pressed="true">HE</button>
         <button type="button" id="mode-greg" aria-pressed="false">BCE / CE</button>
@@ -148,6 +204,16 @@ h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin
       <button type="button" class="icon-btn" id="zoom-out" aria-label="Zoom out">−</button>
       <button type="button" class="icon-btn" id="zoom-in" aria-label="Zoom in">+</button>
     </div>
+  </div>
+  <div class="chips" id="stories" role="group" aria-label="Surprising comparisons"><span class="chips-label">Surprising comparisons</span></div>
+
+  <div class="story-card" id="story-card" hidden>
+    <div>
+      <div class="eyebrow">Surprising comparison</div>
+      <h3 id="story-title"></h3>
+      <p id="story-text"></p>
+    </div>
+    <button type="button" class="close" id="story-close">Close</button>
   </div>
 
   <section class="stage" aria-label="Timeline">
@@ -157,32 +223,26 @@ h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin
       <div class="ov-label">Overview · whole span, box shows what is in view</div>
       <svg id="overview" aria-hidden="true"></svg>
     </div>
-    <div class="hint">Tip: tap a dot or a list entry to read about it. Keyboard: arrow keys pan, + and − zoom.</div>
+    <div class="hint" id="hint"></div>
   </section>
 
   <div class="lower">
-    <article class="card" aria-live="polite">
-      <div class="eyebrow"><span class="swatch" id="d-swatch"></span><span id="d-era-name"></span></div>
-      <h2 id="d-name" style="font-family: var(--font-display)"></h2>
-      <dl class="dates">
-        <div><dt>Holocene</dt><dd id="d-he"></dd></div>
-        <div><dt>Gregorian</dt><dd id="d-greg"></dd></div>
-        <div><dt>Years ago</dt><dd id="d-ago"></dd></div>
-      </dl>
-      <p id="d-desc"></p>
-      <p class="d-era" id="d-pos"></p>
-      <div class="d-nav">
-        <button type="button" id="prev">← Earlier event</button>
-        <button type="button" id="next">Later event →</button>
-      </div>
-    </article>
-
-    <div style="display: flex; flex-direction: column; gap: 20px; min-width: 0">
-      <section class="card">
-        <h2>In view</h2>
-        <p class="sub" id="list-sub"></p>
-        <ul id="list"></ul>
-      </section>
+    <div class="col">
+      <article class="card" aria-live="polite">
+        <div class="eyebrow"><span class="swatch" id="d-swatch"></span><span id="d-era-name"></span></div>
+        <h2 id="d-name"></h2>
+        <dl class="dates">
+          <div><dt id="d-l1"></dt><dd id="d-v1"></dd></div>
+          <div><dt id="d-l2"></dt><dd id="d-v2"></dd></div>
+          <div><dt id="d-l3"></dt><dd id="d-v3"></dd></div>
+        </dl>
+        <p id="d-desc"></p>
+        <p class="d-era" id="d-pos"></p>
+        <div class="d-nav" id="d-nav">
+          <button type="button" id="prev">← Earlier event</button>
+          <button type="button" id="next">Later event →</button>
+        </div>
+      </article>
       <section class="card">
         <h2>Convert a year</h2>
         <p class="sub">HE = CE + 10,000. For BCE, HE = 10,001 − BCE, since there is no year zero.</p>
@@ -191,11 +251,32 @@ h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin
           <label for="conv-era">Calendar<select id="conv-era"><option value="ce">CE</option><option value="bce">BCE</option><option value="he">HE</option></select></label>
         </form>
         <div id="conv-out"></div>
-        <button type="button" class="conv-go" id="conv-go">Show on timeline</button>
+        <button type="button" class="conv-go" id="conv-go">Move the meanwhile line here</button>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="card" aria-live="polite">
+        <div class="mw-head"><h2 id="mw-title">Meanwhile</h2><span class="mw-year" id="mw-greg"></span></div>
+        <p class="sub">What existed in each part of the world in this year. Tap the timeline or use these steps to move the line.</p>
+        <div class="nudge" role="group" aria-label="Move the meanwhile line">
+          <button type="button" data-n="-500">−500</button>
+          <button type="button" data-n="-100">−100</button>
+          <button type="button" data-n="-10">−10</button>
+          <button type="button" data-n="10">+10</button>
+          <button type="button" data-n="100">+100</button>
+          <button type="button" data-n="500">+500</button>
+        </div>
+        <ul id="mw"></ul>
+      </section>
+      <section class="card">
+        <h2>Milestones in view</h2>
+        <p class="sub" id="list-sub"></p>
+        <ul id="list"></ul>
       </section>
     </div>
   </div>
-  <p class="foot">Dates marked ~ are approximate; before about 8000 HE they carry uncertainties of a century or more. The Holocene calendar was proposed by geologist Cesare Emiliani in 1993.</p>
+  <p class="foot">Dates marked ~ are approximate; before about 8000 HE they carry uncertainties of a century or more, and the start and end of cultures and empires are often debated. Dashed bars in the world view are cultures or periods; solid bars are states and empires. Regions are broad groupings for comparison, not historical borders. The Holocene calendar was proposed by geologist Cesare Emiliani in 1993.</p>
 </div>
 
 <script>
@@ -208,57 +289,182 @@ h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin
     { a: 10500, b: 11700, name: 'Medieval to early modern', v: '--era4' },
     { a: 11700, b: NOW + 1, name: 'Industrial and modern', v: '--era5' }
   ];
-  // [HE year, approximate?, name, description]
+
+  // World regions. Each polity: [start HE, end HE, name, kind] — kind 's' = state or empire, 'c' = culture or period.
+  var REGIONS = [
+    { key: 'swasia', name: 'Southwest Asia', pols: [
+      [401, 3501, 'Pre-Pottery Neolithic villages', 'c'], [3501, 6201, 'Halaf & Ubaid cultures', 'c'],
+      [6001, 6901, 'Uruk-period cities', 's'], [7101, 7667, 'Sumerian city-states', 's'], [7667, 7847, 'Akkadian Empire', 's'],
+      [7889, 7997, 'Third Dynasty of Ur', 's'], [8107, 8406, 'Old Babylonian Empire', 's'], [8351, 8821, 'Hittite Empire', 's'],
+      [8406, 8846, 'Kassite Babylon', 's'], [8636, 8951, 'Middle Assyrian Empire', 's'], [9090, 9392, 'Neo-Assyrian Empire', 's'],
+      [9375, 9462, 'Neo-Babylonian Empire', 's'], [9451, 9671, 'Achaemenid Persian Empire', 's'], [9689, 9938, 'Seleucid Empire', 's'],
+      [9754, 10224, 'Parthian Empire', 's'], [10224, 10651, 'Sasanian Empire', 's'], [10632, 10750, 'Rashidun & Umayyad Caliphates', 's'],
+      [10750, 11258, 'Abbasid Caliphate', 's'], [11037, 11194, 'Seljuk Empire', 's'], [11256, 11335, 'Ilkhanate (Mongol)', 's'],
+      [11299, 11922, 'Ottoman Empire', 's'], [11501, 11736, 'Safavid Persia', 's'], [11918, NOW, 'Modern nation-states', 's']
+    ] },
+    { key: 'nafrica', name: 'Egypt, Nubia & North Africa', pols: [
+      [5001, 6001, 'Early Nile farming villages', 'c'], [6001, 6901, 'Predynastic Egypt (Naqada)', 'c'],
+      [6901, 7315, 'Early Dynastic Egypt', 's'], [7315, 7820, 'Egypt: Old Kingdom', 's'], [7946, 8351, 'Egypt: Middle Kingdom', 's'],
+      [7501, 8501, 'Kerma (Nubia)', 's'], [8451, 8932, 'Egypt: New Kingdom', 's'], [8931, 10350, 'Kingdom of Kush', 's'],
+      [8932, 9669, 'Late Period Egypt', 's'], [9187, 9855, 'Carthage', 's'], [9696, 9971, 'Ptolemaic Egypt', 's'],
+      [9971, 10641, 'Roman & Byzantine Egypt', 's'], [10641, 10909, 'Arab caliphates', 's'], [10909, 11171, 'Fatimid Caliphate', 's'],
+      [11250, 11517, 'Mamluk Sultanate', 's'], [11517, 11798, 'Ottoman Egypt', 's'], [11805, 11953, 'Muhammad Ali dynasty', 's'],
+      [11953, NOW, 'Republic of Egypt', 's']
+    ] },
+    { key: 'europe', name: 'Europe & Mediterranean', pols: [
+      [3501, 7001, 'Neolithic farming villages', 'c'], [7001, 8501, 'Megalith builders (Stonehenge)', 'c'], [7301, 8551, 'Minoan Crete', 's'],
+      [8401, 8901, 'Mycenaean Greece', 's'], [9201, 9951, 'Celtic Iron Age', 'c'], [9201, 9678, 'Greek city-states', 's'],
+      [9492, 9974, 'Roman Republic', 's'], [9665, 9970, 'Hellenistic kingdoms', 's'], [9974, 10476, 'Roman Empire', 's'],
+      [10330, 11453, 'Byzantine Empire', 's'], [10481, 10888, 'Frankish kingdoms', 's'], [10711, 11492, 'Al-Andalus', 's'],
+      [10793, 11066, 'Viking Age', 'c'], [10882, 11240, 'Kievan Rus’', 's'], [10962, 11806, 'Holy Roman Empire', 's'],
+      [11400, 11600, 'Renaissance', 'c'], [11492, 11898, 'Spanish Empire', 's'], [11607, 11997, 'British Empire', 's'],
+      [11721, 11917, 'Russian Empire', 's'], [11922, 11991, 'Soviet Union', 's'], [11993, NOW, 'European Union', 's']
+    ] },
+    { key: 'sasia', name: 'South Asia', pols: [
+      [3001, 7401, 'Mehrgarh & early farming', 'c'], [6701, 8301, 'Indus Valley Civilization', 's'], [8501, 9501, 'Vedic period', 'c'],
+      [9401, 9679, 'Mahajanapadas & Magadha', 's'], [9679, 9816, 'Maurya Empire', 's'], [10030, 10375, 'Kushan Empire', 's'],
+      [10320, 10550, 'Gupta Empire', 's'], [10750, 11174, 'Pala Empire', 's'], [10848, 11279, 'Chola Empire', 's'],
+      [11206, 11526, 'Delhi Sultanate', 's'], [11336, 11646, 'Vijayanagara Empire', 's'], [11526, 11857, 'Mughal Empire', 's'],
+      [11858, 11947, 'British Raj', 's'], [11947, NOW, 'India, Pakistan & Bangladesh', 's']
+    ] },
+    { key: 'china', name: 'China & Inner Asia', pols: [
+      [3001, 5001, 'Early rice & millet villages', 'c'], [5001, 7001, 'Yangshao culture', 'c'], [7001, 8101, 'Longshan culture', 'c'],
+      [8101, 8501, 'Erlitou culture', 'c'], [8401, 8955, 'Shang dynasty', 's'], [8955, 9745, 'Zhou dynasty', 's'],
+      [9526, 9780, 'Warring States', 's'], [9780, 9795, 'Qin dynasty', 's'], [9792, 10091, 'Xiongnu confederation', 's'],
+      [9795, 10220, 'Han dynasty', 's'], [10220, 10589, 'Period of division', 's'], [10581, 10907, 'Sui & Tang dynasties', 's'],
+      [10618, 10842, 'Tibetan Empire', 's'], [10960, 11279, 'Song dynasty', 's'], [11206, 11368, 'Mongol Empire & Yuan', 's'],
+      [11368, 11644, 'Ming dynasty', 's'], [11644, 11912, 'Qing dynasty', 's'], [11912, 11949, 'Republic of China', 's'],
+      [11949, NOW, 'People’s Republic of China', 's']
+    ] },
+    { key: 'kj', name: 'Korea & Japan', pols: [
+      [1, 9701, 'Jōmon culture (Japan)', 'c'], [2001, 8501, 'Jeulmun culture (Korea)', 'c'], [8501, 9701, 'Mumun culture (Korea)', 'c'],
+      [9701, 10301, 'Yayoi culture (Japan)', 'c'], [9944, 10668, 'Three Kingdoms of Korea', 's'], [10250, 10710, 'Kofun & Asuka Japan', 's'],
+      [10668, 10935, 'Unified Silla', 's'], [10710, 11185, 'Nara & Heian Japan', 's'], [10918, 11392, 'Goryeo', 's'],
+      [11185, 11868, 'Japanese shogunates', 's'], [11392, 11897, 'Joseon', 's'], [11868, 11947, 'Empire of Japan', 's'],
+      [11947, NOW, 'Modern Japan', 's'], [11948, NOW, 'North & South Korea', 's']
+    ] },
+    { key: 'ssafrica', name: 'Sub-Saharan Africa', pols: [
+      [1, NOW, 'Foraging societies', 'c'], [7001, 8501, 'Sahel herding & farming', 'c'], [8501, 10501, 'Bantu expansion', 'c'],
+      [9001, 10301, 'Nok culture', 'c'], [10100, 10940, 'Kingdom of Aksum', 's'], [10300, 11200, 'Ghana Empire', 's'],
+      [10800, 11500, 'Swahili city-states', 's'], [11100, 11450, 'Great Zimbabwe', 's'], [11180, 11897, 'Kingdom of Benin', 's'],
+      [11235, 11670, 'Mali Empire', 's'], [11270, 11974, 'Ethiopian Empire', 's'], [11390, 11914, 'Kingdom of Kongo', 's'],
+      [11464, 11591, 'Songhai Empire', 's'], [11701, 11901, 'Asante Empire', 's'], [11885, 11960, 'Colonial rule', 's'],
+      [11957, NOW, 'Independent nations', 's']
+    ] },
+    { key: 'americas', name: 'The Americas', pols: [
+      [1, 7001, 'Paleo-Indian & Archaic peoples', 'c'], [3001, 8001, 'Early maize & squash farming', 'c'], [7001, 8201, 'Caral-Supe (Peru)', 's'],
+      [8801, 9601, 'Olmec', 's'], [9101, 9801, 'Chavín', 'c'], [9001, 10900, 'Maya city-states', 's'], [9901, 10550, 'Teotihuacan', 's'],
+      [9901, 10501, 'Hopewell', 'c'], [10100, 10800, 'Moche', 's'], [10500, 11000, 'Tiwanaku & Wari', 's'],
+      [10800, 11600, 'Mississippian (Cahokia)', 'c'], [10850, 11150, 'Chaco Canyon (Ancestral Puebloans)', 'c'],
+      [10900, 11524, 'Postclassic Maya', 's'], [11428, 11521, 'Aztec Empire', 's'], [11438, 11533, 'Inca Empire', 's'],
+      [11492, 11825, 'European colonies', 's'], [11776, NOW, 'Independent American states', 's']
+    ] },
+    { key: 'oceania', name: 'Oceania', pols: [
+      [1, NOW, 'Aboriginal Australian nations', 'c'], [3001, NOW, 'New Guinea highland farming', 'c'], [8401, 9501, 'Lapita culture', 'c'],
+      [10900, 11300, 'Polynesian voyaging & settlement', 'c'], [10950, 11865, 'Tuʻi Tonga', 's'], [11250, NOW, 'Māori (Aotearoa)', 'c'],
+      [11788, 11901, 'British colonies in Australia', 's'], [11795, 11893, 'Kingdom of Hawaiʻi', 's'], [11901, NOW, 'Commonwealth of Australia', 's']
+    ] }
+  ];
+  var RKEY = {};
+  var POL = [];
+  REGIONS.forEach(function (R, ri) {
+    RKEY[R.key] = ri;
+    var list = R.pols.map(function (p) { return { a: p[0], b: p[1], name: p[2], kind: p[3], r: ri }; });
+    list.sort(function (p, q) { return p.a - q.a || q.b - p.b; });
+    var ends = [];
+    list.forEach(function (p) {
+      var row = 0;
+      while (row < ends.length && ends[row] > p.a) row++;
+      ends[row] = p.b; p.row = row; p.id = POL.length; POL.push(p);
+    });
+    R.list = list; R.rows = ends.length;
+  });
+
+  // Milestones: [HE year, approximate?, name, region key or '' for worldwide, description]
   var EV = [
-    [400, 1, 'Göbekli Tepe', 'Hunter-gatherers in southeastern Turkey carve and raise T-shaped stone pillars in circular enclosures, before farming had taken hold there.'],
-    [1000, 1, 'Farming begins', 'Wheat, barley, sheep and goats are domesticated in the Fertile Crescent. Jericho becomes a permanent settlement.'],
-    [2000, 1, 'Jericho wall and tower', 'A stone wall and an 8.5 m stone tower, among the oldest monumental structures built inside a settlement.'],
-    [2500, 1, 'Çatalhöyük', 'A dense town of several thousand people in Anatolia. Houses were packed wall to wall with no streets, and people entered through the roof.'],
-    [3000, 1, 'Rice farming in China', 'Rice is domesticated in the Yangtze valley, one of several independent origins of agriculture.'],
-    [4500, 1, 'Ubaid irrigation', 'Farmers in southern Mesopotamia dig irrigation canals; temple centers grow at Eridu.'],
-    [6000, 1, 'Uruk: the first true city', 'Uruk grows to tens of thousands of people, with specialized crafts, monumental temples and a bureaucracy to run them.'],
-    [6500, 1, 'The wheel', 'Wheeled carts appear in Mesopotamia and Europe at nearly the same time.'],
-    [6700, 1, 'Cuneiform writing', 'Writing develops in Sumer, first as a way to keep accounts of grain, livestock and labor.'],
-    [6900, 1, 'Egypt unified', 'Upper and Lower Egypt are joined under the first pharaohs.'],
-    [7400, 1, 'Indus Valley cities', 'Harappa and Mohenjo-daro are laid out on grids, with standardized bricks and covered drains.'],
-    [7441, 1, 'Great Pyramid of Giza', 'Built for the pharaoh Khufu; it remained the tallest human-made structure for nearly 4,000 years.'],
-    [7667, 1, 'Sargon of Akkad', 'Sargon conquers the Sumerian city-states and forms the first empire to rule many cities at once.'],
-    [8247, 1, 'Hammurabi’s law code', 'The Babylonian king publishes 282 laws carved on a stone stele, with penalties scaled by social rank.'],
-    [8400, 1, 'Shang dynasty', 'A Bronze Age state in the Yellow River valley. Its oracle bones carry the earliest known Chinese writing.'],
-    [8800, 1, 'Bronze Age collapse', 'Palace economies across the eastern Mediterranean, including the Hittites and Mycenaeans, fall within a few decades.'],
-    [8801, 1, 'Olmec civilization', 'The Olmec of Mexico’s Gulf Coast build ceremonial centers and carve colossal stone heads.'],
-    [9225, 0, 'First Olympic Games', 'The first recorded games at Olympia; Greeks later counted years in four-year Olympiads.'],
-    [9248, 0, 'Rome founded', 'The traditional founding date of Rome, later used by Romans as the start of their year count.'],
-    [9451, 1, 'Persian Empire', 'Cyrus the Great founds the Achaemenid Empire, which soon stretches from Egypt to the Indus.'],
-    [9493, 0, 'Athenian democracy', 'Cleisthenes reorganizes Athens so that its citizens vote directly on laws.'],
-    [9500, 1, 'Confucius and the Buddha', 'Confucius in China and the Buddha in northern India teach within about a century of each other.'],
-    [9671, 0, 'Alexander conquers Persia', 'Alexander of Macedon defeats the Persian Empire and spreads Greek culture as far as Central Asia.'],
-    [9780, 0, 'Qin unifies China', 'The Qin state conquers its rivals and standardizes writing, weights, coinage and axle widths.'],
-    [9974, 0, 'Roman Empire begins', 'Octavian takes the title Augustus; Rome’s republic becomes an empire.'],
-    [10001, 0, 'Year 1 CE', 'The first year of the Common Era. The Gregorian count has no year zero, so 1 BCE is followed directly by 1 CE.'],
-    [10250, 1, 'Classic Maya city-states', 'Tikal, Calakmul and dozens of other Maya cities flourish, with a written script and precise calendars.'],
-    [10476, 0, 'Western Rome falls', 'The last western Roman emperor is deposed; the eastern empire continues from Constantinople for another thousand years.'],
-    [10622, 0, 'The Hijra', 'Muhammad moves from Mecca to Medina, the starting point of the Islamic calendar. Islam expands rapidly over the next century.'],
-    [10800, 0, 'Charlemagne crowned', 'Charlemagne is crowned emperor in Rome, uniting much of western Europe.'],
-    [11050, 1, 'Cahokia at its peak', 'Near modern St. Louis, Cahokia is the largest city in North America north of Mexico, built around large earthen mounds.'],
-    [11206, 0, 'Mongol Empire', 'Genghis Khan unites the Mongol tribes; his empire becomes the largest contiguous land empire in history.'],
-    [11347, 0, 'Black Death', 'Plague reaches Europe and kills roughly a third to half of its population within a few years.'],
-    [11440, 1, 'Printing press', 'Gutenberg’s movable-type press makes books cheap enough to spread literacy and new ideas quickly.'],
-    [11492, 0, 'Columbus reaches the Americas', 'The start of sustained contact between Europe and the Americas, with lasting exchange of crops, animals and disease.'],
-    [11521, 0, 'Tenochtitlan falls', 'The Aztec capital, then one of the largest cities in the world, falls to Spanish forces and their Indigenous allies.'],
-    [11687, 0, 'Newton’s Principia', 'Newton publishes his laws of motion and universal gravitation, the foundation of classical physics.'],
-    [11760, 1, 'Industrial Revolution', 'Steam power and mechanized textile production begin in Britain, then spread worldwide.'],
-    [11776, 0, 'American Revolution', 'The thirteen colonies declare independence from Britain.'],
-    [11789, 0, 'French Revolution', 'Revolution in France overturns the monarchy and spreads ideas of popular sovereignty across Europe.'],
-    [11903, 0, 'First powered flight', 'The Wright brothers fly a powered, controlled airplane at Kitty Hawk, North Carolina.'],
-    [11914, 0, 'World War I', 'Fought from 11914 to 11918 HE (1914–1918 CE); about 20 million deaths.'],
-    [11939, 0, 'World War II', 'Fought from 11939 to 11945 HE (1939–1945 CE); the deadliest conflict in history.'],
-    [11957, 0, 'Sputnik', 'The Soviet Union launches the first artificial satellite into orbit.'],
-    [11969, 0, 'Apollo 11', 'Humans first walk on the Moon.'],
-    [11991, 0, 'World Wide Web goes public', 'Tim Berners-Lee’s web software is opened to the public, building on the existing internet.'],
-    [12007, 1, 'Majority urban', 'For the first time, more than half of all people live in cities, about 12,000 years after the first permanent settlements.'],
-    [12026, 0, 'Today', 'The present year: 12026 HE, or 2026 CE.']
-  ].map(function (e, i) { return { i: i, y: e[0], approx: !!e[1], name: e[2], desc: e[3] }; });
+    [400, 1, 'Göbekli Tepe', 'swasia', 'Hunter-gatherers in southeastern Turkey carve and raise T-shaped stone pillars in circular enclosures, before farming had taken hold there.'],
+    [1000, 1, 'Farming begins', 'swasia', 'Wheat, barley, sheep and goats are domesticated in the Fertile Crescent. Jericho becomes a permanent settlement.'],
+    [2000, 1, 'Jericho wall and tower', 'swasia', 'A stone wall and an 8.5 m stone tower, among the oldest monumental structures built inside a settlement.'],
+    [2500, 1, 'Çatalhöyük', 'swasia', 'A dense town of several thousand people in Anatolia. Houses were packed wall to wall with no streets, and people entered through the roof.'],
+    [3000, 1, 'Rice farming in China', 'china', 'Rice is domesticated in the Yangtze valley, one of several independent origins of agriculture.'],
+    [4500, 1, 'Ubaid irrigation', 'swasia', 'Farmers in southern Mesopotamia dig irrigation canals; temple centers grow at Eridu.'],
+    [6000, 1, 'Uruk: the first true city', 'swasia', 'Uruk grows to tens of thousands of people, with specialized crafts, monumental temples and a bureaucracy to run them.'],
+    [6500, 1, 'The wheel', 'swasia', 'Wheeled carts appear in Mesopotamia and Europe at nearly the same time.'],
+    [6700, 1, 'Cuneiform writing', 'swasia', 'Writing develops in Sumer, first as a way to keep accounts of grain, livestock and labor.'],
+    [6900, 1, 'Egypt unified', 'nafrica', 'Upper and Lower Egypt are joined under the first pharaohs.'],
+    [7400, 1, 'Indus Valley cities', 'sasia', 'Harappa and Mohenjo-daro are laid out on grids, with standardized bricks and covered drains.'],
+    [7441, 1, 'Great Pyramid of Giza', 'nafrica', 'Built for the pharaoh Khufu; it remained the tallest human-made structure for nearly 4,000 years.'],
+    [7667, 1, 'Sargon of Akkad', 'swasia', 'Sargon conquers the Sumerian city-states and forms the first empire to rule many cities at once.'],
+    [8247, 1, 'Hammurabi’s law code', 'swasia', 'The Babylonian king publishes 282 laws carved on a stone stele, with penalties scaled by social rank.'],
+    [8400, 1, 'Shang dynasty', 'china', 'A Bronze Age state in the Yellow River valley. Its oracle bones carry the earliest known Chinese writing.'],
+    [8800, 1, 'Bronze Age collapse', 'europe', 'Palace economies across the eastern Mediterranean, including the Hittites and Mycenaeans, fall within a few decades.'],
+    [8801, 1, 'Olmec civilization', 'americas', 'The Olmec of Mexico’s Gulf Coast build ceremonial centers and carve colossal stone heads.'],
+    [9225, 0, 'First Olympic Games', 'europe', 'The first recorded games at Olympia; Greeks later counted years in four-year Olympiads.'],
+    [9248, 0, 'Rome founded', 'europe', 'The traditional founding date of Rome, later used by Romans as the start of their year count.'],
+    [9451, 1, 'Persian Empire', 'swasia', 'Cyrus the Great founds the Achaemenid Empire, which soon stretches from Egypt to the Indus.'],
+    [9493, 0, 'Athenian democracy', 'europe', 'Cleisthenes reorganizes Athens so that its citizens vote directly on laws.'],
+    [9500, 1, 'Confucius and the Buddha', 'china', 'Confucius in China and the Buddha in northern India teach within about a century of each other.'],
+    [9671, 0, 'Alexander conquers Persia', 'europe', 'Alexander of Macedon defeats the Persian Empire and spreads Greek culture as far as Central Asia.'],
+    [9780, 0, 'Qin unifies China', 'china', 'The Qin state conquers its rivals and standardizes writing, weights, coinage and axle widths.'],
+    [9974, 0, 'Roman Empire begins', 'europe', 'Octavian takes the title Augustus; Rome’s republic becomes an empire.'],
+    [10001, 0, 'Year 1 CE', '', 'The first year of the Common Era. The Gregorian count has no year zero, so 1 BCE is followed directly by 1 CE.'],
+    [10250, 1, 'Classic Maya city-states', 'americas', 'Tikal, Calakmul and dozens of other Maya cities flourish, with a written script and precise calendars.'],
+    [10476, 0, 'Western Rome falls', 'europe', 'The last western Roman emperor is deposed; the eastern empire continues from Constantinople for another thousand years.'],
+    [10622, 0, 'The Hijra', 'swasia', 'Muhammad moves from Mecca to Medina, the starting point of the Islamic calendar. Islam expands rapidly over the next century.'],
+    [10800, 0, 'Charlemagne crowned', 'europe', 'Charlemagne is crowned emperor in Rome, uniting much of western Europe.'],
+    [11050, 1, 'Cahokia at its peak', 'americas', 'Near modern St. Louis, Cahokia is the largest city in North America north of Mexico, built around large earthen mounds.'],
+    [11206, 0, 'Mongol Empire', 'china', 'Genghis Khan unites the Mongol tribes; his empire becomes the largest contiguous land empire in history.'],
+    [11347, 0, 'Black Death', 'europe', 'Plague reaches Europe and kills roughly a third to half of its population within a few years.'],
+    [11440, 1, 'Printing press', 'europe', 'Gutenberg’s movable-type press makes books cheap enough to spread literacy and new ideas quickly.'],
+    [11492, 0, 'Columbus reaches the Americas', 'americas', 'The start of sustained contact between Europe and the Americas, with lasting exchange of crops, animals and disease.'],
+    [11521, 0, 'Tenochtitlan falls', 'americas', 'The Aztec capital, then one of the largest cities in the world, falls to Spanish forces and their Indigenous allies.'],
+    [11687, 0, 'Newton’s Principia', 'europe', 'Newton publishes his laws of motion and universal gravitation, the foundation of classical physics.'],
+    [11760, 1, 'Industrial Revolution', 'europe', 'Steam power and mechanized textile production begin in Britain, then spread worldwide.'],
+    [11776, 0, 'American Revolution', 'americas', 'The thirteen colonies declare independence from Britain.'],
+    [11789, 0, 'French Revolution', 'europe', 'Revolution in France overturns the monarchy and spreads ideas of popular sovereignty across Europe.'],
+    [11903, 0, 'First powered flight', 'americas', 'The Wright brothers fly a powered, controlled airplane at Kitty Hawk, North Carolina.'],
+    [11914, 0, 'World War I', '', 'Fought from 11914 to 11918 HE (1914–1918 CE); about 20 million deaths.'],
+    [11939, 0, 'World War II', '', 'Fought from 11939 to 11945 HE (1939–1945 CE); the deadliest conflict in history.'],
+    [11957, 0, 'Sputnik', 'europe', 'The Soviet Union launches the first artificial satellite into orbit.'],
+    [11969, 0, 'Apollo 11', 'americas', 'Humans first walk on the Moon.'],
+    [11991, 0, 'World Wide Web goes public', 'europe', 'Tim Berners-Lee’s web software, built at CERN, is opened to the public, running on the existing internet.'],
+    [12007, 1, 'Majority urban', '', 'For the first time, more than half of all people live in cities, about 12,000 years after the first permanent settlements.'],
+    [12026, 0, 'Today', '', 'The present year: 12026 HE, or 2026 CE.']
+  ].map(function (e, i) { return { i: i, y: e[0], approx: !!e[1], name: e[2], region: e[3], desc: e[4] }; });
+
+  // Surprising comparisons. markers: [HE year, label]; spans: [from, to, label, row]
+  var STORIES = [
+    { id: 'cleopatra', chip: 'Cleopatra & the Moon', title: 'Cleopatra lived closer to the Moon landing than to the Great Pyramid',
+      text: 'The Great Pyramid was already about 2,500 years old when Cleopatra died in 9971 HE (30 BCE). The Apollo 11 landing came 1,998 years after her death.',
+      range: [7250, NOW], cursor: 9971,
+      markers: [[7441, 'Great Pyramid built'], [9971, 'Cleopatra dies'], [11969, 'Moon landing']],
+      spans: [[7441, 9971, '~2,530 years', 0], [9971, 11969, '1,998 years', 0]] },
+    { id: 'mammoths', chip: 'Mammoths & pyramids', title: 'Woolly mammoths outlived the building of the pyramids',
+      text: 'A small population of woolly mammoths survived on Wrangel Island, off northeastern Siberia, until about 8000 HE (around 2000 BCE). That is centuries after the Great Pyramid and Stonehenge’s great stones went up.',
+      range: [7150, 8300], cursor: 7600,
+      markers: [[7441, 'Great Pyramid'], [7501, 'Stonehenge sarsens'], [8000, 'Last mammoths, ~8000']],
+      spans: [[7441, 8000, 'Mammoths and pyramids coexist ~560 years', 0]] },
+    { id: 'oxford', chip: 'Oxford & the Aztecs', title: 'Oxford was teaching students before the Aztecs founded Tenochtitlan',
+      text: 'Teaching at Oxford dates to at least 11096 HE (1096 CE). The Mexica founded Tenochtitlan in 11325 HE, and the Aztec Empire formed in 11428 HE.',
+      range: [11000, 11600], cursor: 11325,
+      markers: [[11096, 'Teaching at Oxford'], [11325, 'Tenochtitlan founded'], [11428, 'Aztec Empire formed'], [11521, 'Tenochtitlan falls']],
+      spans: [[11096, 11428, '332 years', 0]] },
+    { id: 'farming', chip: 'Farming before writing', title: 'People farmed for about 5,700 years before anyone wrote anything down',
+      text: 'Domesticated crops appear in the Fertile Crescent around 1000 HE. Cuneiform writing appears in Sumer around 6700 HE, first for keeping accounts of grain and livestock.',
+      range: [1, 7300], cursor: 1000,
+      markers: [[1000, 'Farming begins'], [6000, 'Uruk, first city'], [6700, 'Writing']],
+      spans: [[1000, 6700, '~5,700 years without writing', 0]] },
+    { id: 'ottomans', chip: 'Ottomans & airplanes', title: 'The Ottoman Empire lasted long enough to see airplanes',
+      text: 'Founded in 11299 HE, the Ottoman Empire took Constantinople in 11453 and was still standing when the Wright brothers flew in 11903. It ended in 11922, after World War I.',
+      range: [11250, NOW], cursor: 11903,
+      markers: [[11299, 'Ottoman Empire founded'], [11453, 'Takes Constantinople'], [11903, 'First powered flight'], [11922, 'Empire ends']],
+      spans: [[11299, 11922, '623 years', 0]] },
+    { id: 'aztec-inca', chip: 'The short American empires', world: true, title: 'The Aztec and Inca empires each lasted under a century',
+      text: 'Both great American empires of the 1400s rose and fell within one long human lifetime. In the same years, Ming China, the Ottomans and Vijayanagara in India were at their height.',
+      range: [11380, 11580], cursor: 11480,
+      markers: [[11492, 'Columbus arrives']],
+      spans: [[11428, 11521, 'Aztec Empire, 93 years', 0], [11438, 11533, 'Inca Empire, 95 years', 1]] }
+  ];
 
   var PRESETS = [
     ['Whole span', 1, NOW],
@@ -270,72 +476,96 @@ h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin
   ];
 
   var MIN = -400, MAX = NOW + 400, MINSPAN = 12;
-  var v0 = 1, v1 = NOW, mode = 'he', selected = 6;
+  var v0 = 1, v1 = NOW, mode = 'he', view = 'milestones';
+  var sel = { t: 'e', i: 6 }, cursor = 6000, story = null;
   var tl = document.getElementById('tl'), ov = document.getElementById('overview');
-  var css = getComputedStyle(document.documentElement);
-  function cv(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
   function eraOf(y) { for (var i = 0; i < ERAS.length; i++) if (y < ERAS[i].b) return ERAS[i]; return ERAS[ERAS.length - 1]; }
-
-  function greg(y) { return y >= 10001 ? (y - 10000) + ' CE' : (10001 - y) + ' BCE'; }
-  function fmt(y, approx) {
-    var r = Math.round(y);
-    var s = mode === 'he' ? String(r) : greg(r);
-    return (approx ? '~' : '') + s;
-  }
-  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-
+  function greg(y) { y = Math.round(y); return y >= 10001 ? (y - 10000) + ' CE' : (10001 - y) + ' BCE'; }
+  function fmt(y, approx) { var r = Math.round(y); return (approx ? '~' : '') + (mode === 'he' ? String(r) : greg(r)); }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function polApprox(p) { return p.a < 9000; }
   function clampView(a, b) {
     var span = Math.max(MINSPAN, Math.min(b - a, MAX - MIN));
-    if (a < MIN) { a = MIN; }
-    if (a + span > MAX) { a = MAX - span; }
+    if (a < MIN) a = MIN;
+    if (a + span > MAX) a = MAX - span;
     return [a, a + span];
   }
   function niceStep(span, target) {
     var raw = span / target, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
-    var s = m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10;
-    return s * p;
+    return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p;
   }
   function textW(s, px) { return s.length * px * 0.58; }
+  function packLabels(items, W) {
+    // items: {x, w}; returns row index per item, placing right-anchored near the right edge
+    var rows = [];
+    return items.map(function (it) {
+      var left = it.x + it.w > W - 4 ? it.x - it.w : it.x;
+      if (left < 2) left = 2;
+      for (var r = 0; r < 8; r++) {
+        rows[r] = rows[r] || [];
+        var ok = rows[r].every(function (iv) { return left + it.w + 6 < iv[0] || left > iv[1] + 6; });
+        if (ok) { rows[r].push([left, left + it.w]); return { row: r, left: left, right: left < it.x }; }
+      }
+      return null;
+    });
+  }
 
   function render() {
-    var W = tl.clientWidth || 800, H = 400, AX = 200;
-    var k = W / (v1 - v0);
+    var W = tl.clientWidth || 800, k = W / (v1 - v0);
     function x(y) { return (y - v0) * k; }
-    var out = [];
-    // grid ticks
+    var body = [], over = [], bottom;
+    if (view === 'world') bottom = drawWorld(body, x, W); else bottom = drawMilestones(body, x, W);
+    var H = bottom;
+    if (story) H = drawStory(over, x, W, bottom); else H = bottom + 8;
+
+    var grid = [];
     var step = niceStep(v1 - v0, Math.max(3, Math.floor(W / 110)));
-    var t0 = Math.ceil(v0 / step) * step;
-    for (var t = t0; t <= v1; t += step) {
+    for (var t = Math.ceil(v0 / step) * step; t <= v1; t += step) {
       var tx = x(t);
-      out.push('<line class="grid" x1="' + tx + '" x2="' + tx + '" y1="24" y2="' + (H - 12) + '"/>');
-      var lbl = mode === 'he' ? String(Math.round(t)) : (t >= 10001 ? (Math.round(t) - 10000) + ' CE' : (t <= 10000 ? (10001 - Math.round(t)) + ' BCE' : ''));
-      out.push('<text class="t-tick" x="' + tx + '" y="16" text-anchor="middle">' + lbl + '</text>');
+      grid.push('<line class="grid" x1="' + tx + '" x2="' + tx + '" y1="22" y2="' + (H - 6) + '"/>');
+      var r = Math.round(t), lbl = mode === 'he' ? String(r) : (r >= 10001 ? (r - 10000) + ' CE' : (r <= 10000 ? (10001 - r) + ' BCE' : ''));
+      grid.push('<text class="t-tick" x="' + tx + '" y="14" text-anchor="middle">' + lbl + '</text>');
     }
-    // era bands
+    if (NOW >= v0 && NOW <= v1) grid.push('<line class="today" x1="' + x(NOW) + '" x2="' + x(NOW) + '" y1="22" y2="' + (H - 6) + '"/>');
+
+    // meanwhile cursor
+    if (cursor >= v0 && cursor <= v1) {
+      var cx = x(cursor), lab = fmt(cursor), lw = textW(lab, 11) * 1.15 + 14;
+      var lx = Math.max(0, Math.min(W - lw, cx - lw / 2));
+      over.push('<line class="cursor" x1="' + cx + '" x2="' + cx + '" y1="20" y2="' + (H - 6) + '"/>');
+      over.push('<rect class="cursor-pill" x="' + lx + '" y="2" width="' + lw + '" height="18" rx="9"/>');
+      over.push('<text class="cursor-t" x="' + (lx + lw / 2) + '" y="15" text-anchor="middle">' + esc(lab) + '</text>');
+    }
+    tl.style.height = H + 'px';
+    tl.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    tl.innerHTML = grid.join('') + body.join('') + over.join('');
+
+    renderOverview();
+    document.getElementById('range-text').textContent = 'Showing ' + fmt(Math.max(v0, 1)) + ' – ' + fmt(Math.min(v1, NOW)) + (mode === 'he' ? ' HE' : '');
+    var span = v1 - v0;
+    document.getElementById('scale-text').textContent = Math.round(span).toLocaleString() + ' years across · 1 px ≈ ' + (span / W < 1 ? (span / W).toFixed(2) : Math.round(span / W)) + ' yr';
+    renderList();
+    markPresets();
+  }
+
+  function drawMilestones(out, x, W) {
+    var AX = 236;
     ERAS.forEach(function (e) {
       var a = Math.max(e.a, v0), b = Math.min(e.b, v1);
       if (b <= a) return;
       var xa = x(a), xb = x(b);
       out.push('<rect x="' + xa + '" y="' + (AX - 9) + '" width="' + (xb - xa) + '" height="18" fill="var(' + e.v + ')"/>');
-      var w = xb - xa;
-      if (w > textW(e.name, 11) + 24) {
-        var cx = xa + 10;
-        out.push('<text class="era-label" x="' + cx + '" y="' + (AX + 4) + '">' + esc(e.name.toUpperCase()) + '</text>');
-      }
+      if (xb - xa > textW(e.name, 11) * 1.15 + 24) out.push('<text class="era-label" x="' + (Math.max(xa, 0) + 10) + '" y="' + (AX + 4) + '">' + esc(e.name.toUpperCase()) + '</text>');
     });
-    // today line
-    if (NOW >= v0 && NOW <= v1) out.push('<line class="today" x1="' + x(NOW) + '" x2="' + x(NOW) + '" y1="24" y2="' + (H - 12) + '"/>');
-
-    // events with lane packing
     var LANES = [['a', 0], ['b', 0], ['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]];
     var occ = LANES.map(function () { return []; });
     var vis = EV.filter(function (e) { return e.y >= v0 && e.y <= v1; });
-    // place selected first so it always gets a label
-    var order = vis.slice().sort(function (p, q) { return (q.i === selected) - (p.i === selected) || p.y - q.y; });
+    var selI = sel.t === 'e' ? sel.i : -1;
+    var order = vis.slice().sort(function (p, q) { return (q.i === selI) - (p.i === selI) || p.y - q.y; });
     var placed = {};
     order.forEach(function (e) {
-      var px = x(e.y);
-      var yl = fmt(e.y, e.approx);
+      var px = x(e.y), yl = fmt(e.y, e.approx);
       var w = Math.max(textW(e.name, 13) * 1.08, textW(yl, 11) * 1.1) + 14;
       var left = px + w > W - 4 ? px - w : px;
       if (left < 2) left = 2;
@@ -345,31 +575,78 @@ h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin
       }
     });
     vis.forEach(function (e) {
-      var px = x(e.y), p = placed[e.i], sel = e.i === selected ? ' sel' : '';
-      var g = '<g class="ev' + sel + '" data-i="' + e.i + '" tabindex="0" role="button" aria-label="' + esc(e.name + ', ' + fmt(e.y, e.approx)) + '">';
+      var px = x(e.y), p = placed[e.i];
+      var g = '<g class="ev' + (e.i === selI ? ' sel' : '') + '" data-i="' + e.i + '" tabindex="0" role="button" aria-label="' + esc(e.name + ', ' + fmt(e.y, e.approx)) + '">';
       if (p) {
         var above = p.lane[0] === 'a', n = p.lane[1];
         var ly = above ? AX - 36 - n * 40 : AX + 30 + n * 40;
         var sy1 = above ? ly + 6 : AX + 9, sy2 = above ? AX - 9 : ly - 14;
-        g += '<line class="stem" x1="' + px + '" x2="' + px + '" y1="' + sy1 + '" y2="' + sy2 + '"/>';
         var anchor = p.right ? 'end' : 'start', tx = p.right ? px - 6 : px + 6;
+        g += '<line class="stem" x1="' + px + '" x2="' + px + '" y1="' + sy1 + '" y2="' + sy2 + '"/>';
         g += '<rect class="hit" x="' + p.left + '" y="' + (ly - 14) + '" width="' + p.w + '" height="34"/>';
         g += '<text class="t-year" x="' + tx + '" y="' + ly + '" text-anchor="' + anchor + '">' + esc(fmt(e.y, e.approx)) + '</text>';
         g += '<text class="t-name" x="' + tx + '" y="' + (ly + 16) + '" text-anchor="' + anchor + '">' + esc(e.name) + '</text>';
       }
-      g += '<circle class="hit" cx="' + px + '" cy="' + AX + '" r="12"/>';
-      g += '<circle class="dot" cx="' + px + '" cy="' + AX + '" r="5"/></g>';
+      g += '<circle class="hit" cx="' + px + '" cy="' + AX + '" r="12"/><circle class="dot" cx="' + px + '" cy="' + AX + '" r="5"/></g>';
       out.push(g);
     });
-    tl.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-    tl.innerHTML = out.join('');
+    return 412;
+  }
 
-    renderOverview();
-    document.getElementById('range-text').textContent = 'Showing ' + fmt(Math.max(v0, 1)) + ' – ' + fmt(Math.min(v1, NOW)) + (mode === 'he' ? ' HE' : '');
-    var span = v1 - v0;
-    document.getElementById('scale-text').textContent = Math.round(span).toLocaleString() + ' years across · 1 px ≈ ' + (span / W < 1 ? (span / W).toFixed(2) : Math.round(span / W)) + ' yr';
-    renderList(vis);
-    markPresets();
+  function drawWorld(out, x, W) {
+    // thin era strip, milestone dots, then one swimlane per region
+    ERAS.forEach(function (e) {
+      var a = Math.max(e.a, v0), b = Math.min(e.b, v1);
+      if (b > a) out.push('<rect x="' + x(a) + '" y="24" width="' + (x(b) - x(a)) + '" height="4" fill="var(' + e.v + ')"/>');
+    });
+    var selI = sel.t === 'e' ? sel.i : -1;
+    EV.forEach(function (e) {
+      if (e.y < v0 || e.y > v1) return;
+      var px = x(e.y);
+      out.push('<g class="ev' + (e.i === selI ? ' sel' : '') + '" data-i="' + e.i + '" tabindex="0" role="button" aria-label="' + esc(e.name + ', ' + fmt(e.y, e.approx)) + '"><title>' + esc(fmt(e.y, e.approx) + ' · ' + e.name) + '</title><circle class="hit" cx="' + px + '" cy="40" r="10"/><circle class="dot" cx="' + px + '" cy="40" r="4"/></g>');
+    });
+    var y = 56;
+    REGIONS.forEach(function (R, ri) {
+      out.push('<line class="lane-sep" x1="0" x2="' + W + '" y1="' + (y - 4) + '" y2="' + (y - 4) + '"/>');
+      out.push('<text class="lane-h" x="8" y="' + (y + 10) + '">' + esc(R.name) + '</text>');
+      R.list.forEach(function (p) {
+        if (p.b < v0 || p.a > v1) return;
+        var xa = x(p.a), xb = x(p.b), ca = Math.max(xa, -4), cb = Math.min(xb, W + 4), w = Math.max(2, cb - ca);
+        var ry = y + 16 + p.row * 20, act = p.a <= cursor && cursor < p.b, isSel = sel.t === 'p' && sel.id === p.id;
+        var g = '<g class="pol" data-p="' + p.id + '" tabindex="0" role="button" aria-label="' + esc(p.name + ', ' + fmt(p.a, polApprox(p)) + ' to ' + fmt(p.b)) + '">';
+        g += '<rect x="' + ca + '" y="' + ry + '" width="' + w + '" height="16" rx="2" fill="var(--r' + ri + ')" fill-opacity="' + (act ? 0.42 : 0.16) + '" stroke="' + (isSel ? 'var(--ink)' : 'var(--r' + ri + ')') + '" stroke-width="' + (isSel ? 2.5 : act ? 1.5 : 1) + '"' + (p.kind === 'c' ? ' stroke-dasharray="4 3"' : '') + '/>';
+        var avail = Math.min(xb, W) - Math.max(xa, 0);
+        if (avail > textW(p.name, 12) * 1.05 + 10) g += '<text class="pol-t" x="' + (Math.max(xa, 0) + 5) + '" y="' + (ry + 12) + '">' + esc(p.name) + '</text>';
+        out.push(g + '</g>');
+      });
+      y += 16 + R.rows * 20 + 12;
+    });
+    return y;
+  }
+
+  function drawStory(out, x, W, bottom) {
+    var S = STORIES.find(function (s) { return s.id === story; });
+    var spanRows = S.spans.reduce(function (m, s) { return Math.max(m, s[3] + 1); }, 0);
+    var top = bottom + 8;
+    var labels = S.markers.map(function (m) { var t = fmt(m[0]) + ' ' + m[1]; return { x: x(m[0]), w: textW(t, 12) * 1.08 + 8, t: t, y: m[0] }; });
+    var packed = packLabels(labels, W);
+    var mRows = packed.reduce(function (m, p) { return p ? Math.max(m, p.row + 1) : m; }, 0);
+    var spanTop = top + 10, labTop = spanTop + spanRows * 30 + 6;
+    var H = labTop + mRows * 18 + 10;
+    S.markers.forEach(function (m, i) {
+      var mx = x(m[0]); if (m[0] < v0 || m[0] > v1) return;
+      var p = packed[i];
+      var ty = p ? labTop + p.row * 18 + 12 : H - 8;
+      out.push('<line class="mk" x1="' + mx + '" x2="' + mx + '" y1="22" y2="' + (ty - 12) + '"/>');
+      if (p) out.push('<text class="mk-t" x="' + (p.right ? mx - 4 : mx + 4) + '" y="' + ty + '" text-anchor="' + (p.right ? 'end' : 'start') + '">' + esc(labels[i].t) + '</text>');
+    });
+    S.spans.forEach(function (s) {
+      var a = x(s[0]), b = x(s[1]), sy = spanTop + s[3] * 30 + 18;
+      out.push('<path class="sp" d="M' + a + ' ' + (sy - 6) + 'V' + sy + 'H' + b + 'V' + (sy - 6) + '"/>');
+      var cx = Math.max(4, Math.min(W - 4, (Math.max(a, 0) + Math.min(b, W)) / 2));
+      out.push('<text class="sp-t" x="' + cx + '" y="' + (sy - 9) + '" text-anchor="middle">' + esc(s[2]) + '</text>');
+    });
+    return H;
   }
 
   function renderOverview() {
@@ -378,63 +655,110 @@ h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin
       out.push('<rect x="' + (e.a - 1) * k + '" y="14" width="' + (Math.min(e.b, NOW) - e.a) * k + '" height="16" fill="var(' + e.v + ')"/>');
     });
     var a = (Math.max(v0, 1) - 1) * k, b = (Math.min(v1, NOW) - 1) * k;
+    out.push('<line x1="' + (cursor - 1) * k + '" x2="' + (cursor - 1) * k + '" y1="8" y2="36" stroke="var(--accent)" stroke-width="2"/>');
     out.push('<rect x="' + (a - 1) + '" y="6" width="' + Math.max(3, b - a + 2) + '" height="32" fill="none" stroke="var(--ink)" stroke-width="2"/>');
     ov.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     ov.innerHTML = out.join('');
   }
 
-  function renderList(vis) {
+  function renderList() {
+    var vis = EV.filter(function (e) { return e.y >= v0 && e.y <= v1; });
     var ul = document.getElementById('list');
-    document.getElementById('list-sub').textContent = vis.length + ' of ' + EV.length + ' events in the current view';
-    if (!vis.length) { ul.innerHTML = '<li class="empty">No events in this stretch. Zoom out or pan to find some.</li>'; return; }
+    document.getElementById('list-sub').textContent = vis.length + ' of ' + EV.length + ' milestones in the current view';
+    if (!vis.length) { ul.innerHTML = '<li class="empty">No milestones in this stretch. Zoom out or pan to find some.</li>'; return; }
     ul.innerHTML = vis.map(function (e) {
-      return '<li><button type="button" data-i="' + e.i + '"' + (e.i === selected ? ' aria-current="true"' : '') + '><span class="sw" style="background: var(' + eraOf(e.y).v + ')"></span><span class="yr">' + esc(fmt(e.y, e.approx)) + '</span><span>' + esc(e.name) + '</span></button></li>';
+      return '<li><button type="button" data-i="' + e.i + '"' + (sel.t === 'e' && e.i === sel.i ? ' aria-current="true"' : '') + '><span class="sw" style="background: var(' + eraOf(e.y).v + ')"></span><span class="yr">' + esc(fmt(e.y, e.approx)) + '</span><span>' + esc(e.name) + '</span></button></li>';
+    }).join('');
+  }
+
+  function activeAt(y, ri) {
+    return REGIONS[ri].list.filter(function (p) { return p.a <= y && y < p.b; })
+      .sort(function (p, q) { return (p.kind === 's' ? 0 : 1) - (q.kind === 's' ? 0 : 1) || p.a - q.a; });
+  }
+
+  function renderMeanwhile() {
+    var c = Math.round(cursor);
+    document.getElementById('mw-title').textContent = 'Meanwhile, in ' + c + ' HE';
+    document.getElementById('mw-greg').textContent = greg(c) + ' · ' + (NOW - c > 0 ? (NOW - c).toLocaleString() + ' years ago' : 'this year');
+    var win = c < 9000 ? 400 : c < 11500 ? 120 : 40;
+    document.getElementById('mw').innerHTML = REGIONS.map(function (R, ri) {
+      var act = activeAt(c, ri);
+      var pols = act.length ? act.map(function (p) {
+        return '<button type="button" data-p="' + p.id + '"' + (p.kind === 's' ? ' class="st"' : '') + '>' + esc(p.name) + '</button>';
+      }).join(', ') : '<span class="none">No state or culture recorded here in this dataset</span>';
+      var near = null, best = Infinity;
+      EV.forEach(function (e) { if (e.region === R.key && Math.abs(e.y - c) <= win && Math.abs(e.y - c) < best) { best = Math.abs(e.y - c); near = e; } });
+      var nearHtml = '';
+      if (near) {
+        var d = near.y - c, rel = d === 0 ? 'this year' : Math.abs(d) + (Math.abs(d) === 1 ? ' year ' : ' years ') + (d > 0 ? 'later' : 'earlier');
+        nearHtml = '<div class="near">Nearby: <button type="button" data-i="' + near.i + '">' + esc(near.name) + '</button> (' + rel + ')</div>';
+      }
+      return '<li><span class="sw" style="background: var(--r' + ri + ')"></span><div><div class="rn">' + esc(R.name) + '</div><div class="pols">' + pols + '</div>' + nearHtml + '</div></li>';
     }).join('');
   }
 
   function renderDetail() {
-    var e = EV[selected], era = eraOf(e.y);
+    var nav = document.getElementById('d-nav');
+    function setRows(l1, v1x, l2, v2, l3, v3) {
+      document.getElementById('d-l1').textContent = l1; document.getElementById('d-v1').textContent = v1x;
+      document.getElementById('d-l2').textContent = l2; document.getElementById('d-v2').textContent = v2;
+      document.getElementById('d-l3').textContent = l3; document.getElementById('d-v3').textContent = v3;
+    }
+    if (sel.t === 'p') {
+      var p = POL[sel.id], R = REGIONS[p.r], ap = polApprox(p) ? '~' : '';
+      document.getElementById('d-swatch').style.background = 'var(--r' + p.r + ')';
+      document.getElementById('d-era-name').textContent = R.name + ' · ' + (p.kind === 's' ? 'State or empire' : 'Culture or period');
+      document.getElementById('d-name').textContent = p.name;
+      setRows('Began', ap + p.a + ' HE', 'Ended', p.b >= NOW ? 'Continues' : ap + p.b + ' HE', 'Lasted', (p.b >= NOW ? '' : ap) + (Math.min(p.b, NOW) - p.a).toLocaleString() + ' yr' + (p.b >= NOW ? ' so far' : ''));
+      var others = [];
+      REGIONS.forEach(function (R2, ri) { if (ri === p.r) return; var s = activeAt(p.a, ri).filter(function (q) { return q.kind === 's'; })[0]; if (s) others.push(s.name + ' (' + R2.name + ')'); });
+      document.getElementById('d-desc').textContent = 'From ' + ap + greg(p.a) + ' to ' + (p.b >= NOW ? 'today' : ap + greg(p.b)) + '. ' + (others.length ? 'When it began, elsewhere in the world: ' + others.slice(0, 5).join('; ') + '.' : 'When it began, no other state on this timeline existed anywhere else.');
+      document.getElementById('d-pos').textContent = 'Tap another bar or move the meanwhile line to compare.';
+      nav.hidden = true;
+      return;
+    }
+    var e = EV[sel.i], era = eraOf(e.y);
+    nav.hidden = false;
     document.getElementById('d-swatch').style.background = 'var(' + era.v + ')';
-    document.getElementById('d-era-name').textContent = era.name;
+    document.getElementById('d-era-name').textContent = era.name + (e.region ? ' · ' + REGIONS[RKEY[e.region]].name : ' · Worldwide');
     document.getElementById('d-name').textContent = e.name;
-    document.getElementById('d-he').textContent = (e.approx ? '~' : '') + e.y;
-    document.getElementById('d-greg').textContent = (e.approx ? '~' : '') + greg(e.y);
-    document.getElementById('d-ago').textContent = e.y === NOW ? '0' : (e.approx ? '~' : '') + (NOW - e.y).toLocaleString();
+    setRows('Holocene', (e.approx ? '~' : '') + e.y, 'Gregorian', (e.approx ? '~' : '') + greg(e.y), 'Years ago', e.y === NOW ? '0' : (e.approx ? '~' : '') + (NOW - e.y).toLocaleString());
     document.getElementById('d-desc').textContent = e.desc;
-    var pct = ((e.y - 1) / (NOW - 1) * 100);
+    var pct = (e.y - 1) / (NOW - 1) * 100;
     document.getElementById('d-pos').textContent = e.y === NOW ? 'The right-hand edge of the whole timeline.' : Math.round(pct) + '% of the way from year 1 to today; ' + (100 - pct < 1 ? (100 - pct).toFixed(1) : Math.round(100 - pct)) + '% of the span comes after it.';
-    document.getElementById('prev').disabled = selected === 0;
-    document.getElementById('next').disabled = selected === EV.length - 1;
+    document.getElementById('prev').disabled = sel.i === 0;
+    document.getElementById('next').disabled = sel.i === EV.length - 1;
   }
 
-  // animated view changes
   var anim = null, reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function goTo(a, b) {
     var c = clampView(a, b), s0 = v0, s1 = v1;
     if (anim) cancelAnimationFrame(anim);
     if (reduce) { v0 = c[0]; v1 = c[1]; render(); return; }
     var start = performance.now(), D = 450;
-    // interpolate in log-span so zooms feel even
     var ls0 = Math.log(s1 - s0), ls1 = Math.log(c[1] - c[0]), m0 = (s0 + s1) / 2, m1 = (c[0] + c[1]) / 2;
     function f(now) {
       var t = Math.min(1, (now - start) / D), e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
       var span = Math.exp(ls0 + (ls1 - ls0) * e), mid = m0 + (m1 - m0) * e;
       v0 = mid - span / 2; v1 = mid + span / 2; render();
-      if (t < 1) anim = requestAnimationFrame(f); else anim = null;
+      anim = t < 1 ? requestAnimationFrame(f) : null;
     }
     anim = requestAnimationFrame(f);
   }
-  function zoomAt(factor, yCenter) {
-    var a = yCenter - (yCenter - v0) * factor, b = yCenter + (v1 - yCenter) * factor;
-    var c = clampView(a, b); v0 = c[0]; v1 = c[1]; render();
-  }
+  function zoomAt(factor, yc) { var c = clampView(yc - (yc - v0) * factor, yc + (v1 - yc) * factor); v0 = c[0]; v1 = c[1]; render(); }
   function pad(a, b) { var p = (b - a) * 0.03; return [a - p, b + p]; }
+
+  function setCursor(y, keepView) {
+    cursor = Math.max(1, Math.min(NOW, Math.round(y)));
+    if (!keepView && (cursor < v0 || cursor > v1)) { var s = v1 - v0; goTo(cursor - s / 2, cursor + s / 2); } else render();
+    renderMeanwhile();
+  }
 
   // presets
   var presetBox = document.getElementById('presets');
   PRESETS.forEach(function (p, i) {
     var b = document.createElement('button');
-    b.type = 'button'; b.className = 'chip'; b.textContent = p[0]; b.dataset.i = i; b.setAttribute('aria-pressed', 'false');
+    b.type = 'button'; b.className = 'chip'; b.textContent = p[0]; b.setAttribute('aria-pressed', 'false');
     b.addEventListener('click', function () { var r = pad(p[1], p[2]); goTo(r[0], r[1]); });
     presetBox.appendChild(b);
   });
@@ -446,16 +770,51 @@ h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin
     });
   }
 
-  function select(i, focusView) {
-    selected = Math.max(0, Math.min(EV.length - 1, i));
-    var y = EV[selected].y;
-    if (focusView && (y < v0 || y > v1)) {
-      var span = v1 - v0; goTo(y - span / 2, y + span / 2);
-    } else render();
-    renderDetail();
+  // stories
+  var storyBox = document.getElementById('stories');
+  STORIES.forEach(function (s) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip story'; b.textContent = s.chip; b.dataset.s = s.id; b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', function () { if (story === s.id) closeStory(); else openStory(s.id); });
+    storyBox.appendChild(b);
+  });
+  function setHash(h) { try { if (h) history.replaceState(null, '', '#' + h); else history.replaceState(null, '', location.pathname + location.search); } catch (err) {} }
+  function openStory(id) {
+    var s = STORIES.find(function (q) { return q.id === id; }); if (!s) return;
+    story = id;
+    if (s.world && view !== 'world') setView('world', true);
+    document.getElementById('story-card').hidden = false;
+    document.getElementById('story-title').textContent = s.title;
+    document.getElementById('story-text').textContent = s.text;
+    Array.prototype.forEach.call(storyBox.querySelectorAll('.story'), function (b) { b.setAttribute('aria-pressed', b.dataset.s === id ? 'true' : 'false'); });
+    cursor = s.cursor; renderMeanwhile();
+    var r = pad(s.range[0], s.range[1]); goTo(r[0], r[1]);
+    setHash(id);
+  }
+  function closeStory() {
+    story = null;
+    document.getElementById('story-card').hidden = true;
+    Array.prototype.forEach.call(storyBox.querySelectorAll('.story'), function (b) { b.setAttribute('aria-pressed', 'false'); });
+    setHash(view === 'world' ? 'world' : '');
+    render();
+  }
+  document.getElementById('story-close').addEventListener('click', closeStory);
+
+  function selectEvent(i, focusView) {
+    sel = { t: 'e', i: Math.max(0, Math.min(EV.length - 1, i)) };
+    var y = EV[sel.i].y;
+    cursor = y;
+    if (focusView && (y < v0 || y > v1)) { var s = v1 - v0; goTo(y - s / 2, y + s / 2); } else render();
+    renderDetail(); renderMeanwhile();
+  }
+  function selectPol(id) {
+    sel = { t: 'p', id: id };
+    var p = POL[id];
+    if (!(p.a <= cursor && cursor < p.b)) cursor = p.a;
+    render(); renderDetail(); renderMeanwhile();
   }
 
-  // pointer interaction on timeline
+  // pointer interaction
   var pts = new Map(), dragStart = null, pinchStart = null, moved = false;
   function yAt(clientX) { var r = tl.getBoundingClientRect(); return v0 + (clientX - r.left) / r.width * (v1 - v0); }
   tl.addEventListener('pointerdown', function (ev) {
@@ -464,23 +823,21 @@ h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin
     moved = false;
     if (anim) { cancelAnimationFrame(anim); anim = null; }
     if (pts.size === 1) dragStart = { x: ev.clientX, v0: v0, v1: v1 };
-    if (pts.size === 2) {
-      var xs = Array.from(pts.values());
-      pinchStart = { d: Math.abs(xs[0] - xs[1]) || 1, mid: yAt((xs[0] + xs[1]) / 2), v0: v0, v1: v1 };
-    }
+    if (pts.size === 2) { var xs = Array.from(pts.values()); pinchStart = { d: Math.abs(xs[0] - xs[1]) || 1, mid: yAt((xs[0] + xs[1]) / 2), v0: v0, v1: v1 }; }
   });
   tl.addEventListener('pointermove', function (ev) {
     if (!pts.has(ev.pointerId)) return;
     pts.set(ev.pointerId, ev.clientX);
     var r = tl.getBoundingClientRect();
     if (pts.size === 2 && pinchStart) {
-      var xs = Array.from(pts.values()), d = Math.abs(xs[0] - xs[1]) || 1, f = pinchStart.d / d;
-      var a = pinchStart.mid - (pinchStart.mid - pinchStart.v0) * f, b = pinchStart.mid + (pinchStart.v1 - pinchStart.mid) * f;
-      var c = clampView(a, b); v0 = c[0]; v1 = c[1]; moved = true; render(); return;
+      var xs = Array.from(pts.values()), f = pinchStart.d / (Math.abs(xs[0] - xs[1]) || 1);
+      var c = clampView(pinchStart.mid - (pinchStart.mid - pinchStart.v0) * f, pinchStart.mid + (pinchStart.v1 - pinchStart.mid) * f);
+      v0 = c[0]; v1 = c[1]; moved = true; render(); return;
     }
     if (dragStart) {
       var dx = ev.clientX - dragStart.x;
-      if (Math.abs(dx) > 3) { moved = true; tl.classList.add('dragging'); }
+      if (Math.abs(dx) > 4) { moved = true; tl.classList.add('dragging'); }
+      if (!moved) return;
       var dy = -dx / r.width * (dragStart.v1 - dragStart.v0);
       var c2 = clampView(dragStart.v0 + dy, dragStart.v1 + dy); v0 = c2[0]; v1 = c2[1]; render();
     }
@@ -488,13 +845,16 @@ h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin
   function endPtr(ev) {
     pts.delete(ev.pointerId);
     if (pts.size < 2) pinchStart = null;
-    if (pts.size === 1) { var x0 = Array.from(pts.values())[0]; dragStart = { x: x0, v0: v0, v1: v1 }; }
+    if (pts.size === 1) dragStart = { x: Array.from(pts.values())[0], v0: v0, v1: v1 };
     if (pts.size === 0) { dragStart = null; tl.classList.remove('dragging'); }
   }
   tl.addEventListener('pointerup', function (ev) {
-    if (!moved) {
-      var g = ev.target.closest && ev.target.closest('.ev');
-      if (g) select(+g.dataset.i, false);
+    if (!moved && pts.size === 1) {
+      var t = ev.target.closest ? ev.target : null;
+      var g = t && t.closest('.ev'), p = t && t.closest('.pol');
+      if (g) selectEvent(+g.dataset.i, false);
+      else if (p) selectPol(+p.dataset.p);
+      else setCursor(yAt(ev.clientX), true);
     }
     endPtr(ev);
   });
@@ -503,25 +863,26 @@ h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin
     ev.preventDefault();
     if (anim) { cancelAnimationFrame(anim); anim = null; }
     if (Math.abs(ev.deltaX) > Math.abs(ev.deltaY) && !ev.ctrlKey) {
-      var r = tl.getBoundingClientRect(), dy = ev.deltaX / r.width * (v1 - v0);
+      var dy = ev.deltaX / tl.getBoundingClientRect().width * (v1 - v0);
       var c = clampView(v0 + dy, v1 + dy); v0 = c[0]; v1 = c[1]; render(); return;
     }
     zoomAt(Math.exp(ev.deltaY * (ev.ctrlKey ? 0.01 : 0.0018)), yAt(ev.clientX));
   }, { passive: false });
   tl.addEventListener('keydown', function (ev) {
-    var g = ev.target.closest && ev.target.closest('.ev');
-    if (g && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); select(+g.dataset.i, false); }
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    var g = ev.target.closest && ev.target.closest('.ev'), p = ev.target.closest && ev.target.closest('.pol');
+    if (g) { ev.preventDefault(); selectEvent(+g.dataset.i, false); }
+    else if (p) { ev.preventDefault(); selectPol(+p.dataset.p); }
   });
   document.addEventListener('keydown', function (ev) {
     if (/INPUT|SELECT|TEXTAREA/.test(ev.target.tagName)) return;
-    var span = v1 - v0;
+    var span = v1 - v0, m = (v0 + v1) / 2;
     if (ev.key === 'ArrowLeft') { ev.preventDefault(); goTo(v0 - span * 0.2, v1 - span * 0.2); }
     else if (ev.key === 'ArrowRight') { ev.preventDefault(); goTo(v0 + span * 0.2, v1 + span * 0.2); }
-    else if (ev.key === '+' || ev.key === '=') { var m = (v0 + v1) / 2; goTo(m - span * 0.3, m + span * 0.3); }
-    else if (ev.key === '-' || ev.key === '_') { var m2 = (v0 + v1) / 2; goTo(m2 - span, m2 + span); }
+    else if (ev.key === '+' || ev.key === '=') goTo(m - span * 0.3, m + span * 0.3);
+    else if (ev.key === '-' || ev.key === '_') goTo(m - span, m + span);
   });
 
-  // overview: click or drag to move the window
   function ovMove(clientX) {
     var r = ov.getBoundingClientRect(), y = 1 + (clientX - r.left) / r.width * (NOW - 1), span = v1 - v0;
     var c = clampView(y - span / 2, y + span / 2); v0 = c[0]; v1 = c[1]; render();
@@ -533,10 +894,15 @@ h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin
   ov.addEventListener('pointercancel', function () { ovDrag = false; });
 
   document.getElementById('zoom-in').addEventListener('click', function () { var m = (v0 + v1) / 2, s = (v1 - v0) * 0.3; goTo(m - s, m + s); });
-  document.getElementById('zoom-out').addEventListener('click', function () { var m = (v0 + v1) / 2, s = (v1 - v0); goTo(m - s, m + s); });
-  document.getElementById('list').addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (b) select(+b.dataset.i, false); });
-  document.getElementById('prev').addEventListener('click', function () { select(selected - 1, true); });
-  document.getElementById('next').addEventListener('click', function () { select(selected + 1, true); });
+  document.getElementById('zoom-out').addEventListener('click', function () { var m = (v0 + v1) / 2, s = v1 - v0; goTo(m - s, m + s); });
+  document.getElementById('list').addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (b) selectEvent(+b.dataset.i, false); });
+  document.getElementById('mw').addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b) return;
+    if (b.dataset.p != null) selectPol(+b.dataset.p); else if (b.dataset.i != null) selectEvent(+b.dataset.i, true);
+  });
+  document.querySelector('.nudge').addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (b) setCursor(cursor + (+b.dataset.n), false); });
+  document.getElementById('prev').addEventListener('click', function () { selectEvent(sel.i - 1, true); });
+  document.getElementById('next').addEventListener('click', function () { selectEvent(sel.i + 1, true); });
 
   function setMode(m) {
     mode = m;
@@ -547,31 +913,41 @@ h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin
   document.getElementById('mode-he').addEventListener('click', function () { setMode('he'); });
   document.getElementById('mode-greg').addEventListener('click', function () { setMode('greg'); });
 
-  // converter
+  var HINTS = {
+    milestones: 'Tap a milestone to read about it, or tap empty space to move the meanwhile line. Keyboard: arrow keys pan, + and − zoom.',
+    world: 'Each row is a region; bars are states (solid) and cultures (dashed), stacked when they overlap. Tap a bar for details, or tap empty space to move the meanwhile line.'
+  };
+  function setView(v, silent) {
+    view = v;
+    document.getElementById('view-ms').setAttribute('aria-pressed', v === 'milestones');
+    document.getElementById('view-world').setAttribute('aria-pressed', v === 'world');
+    document.getElementById('hint').textContent = HINTS[v];
+    if (!story) setHash(v === 'world' ? 'world' : '');
+    if (!silent) render();
+  }
+  document.getElementById('view-ms').addEventListener('click', function () { setView('milestones'); });
+  document.getElementById('view-world').addEventListener('click', function () { setView('world'); });
+
   var convHE = null;
   function convert() {
     var n = parseInt(document.getElementById('conv-year').value, 10), era = document.getElementById('conv-era').value, out = document.getElementById('conv-out');
     if (!isFinite(n) || n < 1) { out.innerHTML = '<div><span>Enter a whole year of 1 or more.</span><span></span></div>'; convHE = null; return; }
     var he = era === 'he' ? n : era === 'ce' ? n + 10000 : 10001 - n;
     convHE = he;
-    var rows = [['Holocene', he >= 1 ? he + ' HE' : 'before year 1 HE']];
-    rows.push(['Gregorian', greg(he)]);
-    rows.push(['Years before 12026', (NOW - he).toLocaleString()]);
-    var e = eraOf(Math.max(1, he));
-    rows.push(['Period', he > NOW ? 'In the future' : e.name]);
+    var rows = [['Holocene', he >= 1 ? he + ' HE' : 'before year 1 HE'], ['Gregorian', greg(he)], ['Years before 12026', (NOW - he).toLocaleString()], ['Period', he > NOW ? 'In the future' : eraOf(Math.max(1, he)).name]];
     out.innerHTML = rows.map(function (r) { return '<div><span>' + esc(r[0]) + '</span><span>' + esc(r[1]) + '</span></div>'; }).join('');
-    document.getElementById('conv-go').disabled = !(he >= MIN && he <= MAX);
+    document.getElementById('conv-go').disabled = !(he >= 1 && he <= NOW);
   }
   document.getElementById('conv-form').addEventListener('input', convert);
   document.getElementById('conv-form').addEventListener('submit', function (ev) { ev.preventDefault(); });
-  document.getElementById('conv-go').addEventListener('click', function () {
-    if (convHE == null) return;
-    var span = Math.min(v1 - v0, 600); goTo(convHE - span / 2, convHE + span / 2);
-  });
+  document.getElementById('conv-go').addEventListener('click', function () { if (convHE != null) setCursor(convHE, false); });
 
   window.addEventListener('resize', render);
-  var r0 = pad(1, NOW); var c0 = clampView(r0[0], r0[1]); v0 = c0[0]; v1 = c0[1];
-  render(); renderDetail(); convert();
+  var h = (location.hash || '').replace('#', '');
+  setView(h === 'world' ? 'world' : 'milestones', true);
+  var r0 = pad(1, NOW), c0 = clampView(r0[0], r0[1]); v0 = c0[0]; v1 = c0[1];
+  render(); renderDetail(); renderMeanwhile(); convert();
+  if (STORIES.some(function (s) { return s.id === h; })) openStory(h);
 })();
 </script>
 </body>
