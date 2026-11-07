@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>12,026 Years of Civilization (poster)</title>
+<!-- Print size: 17 × 11 in (tabloid, landscape) at 96 px/in = 1632 × 1056 px. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;600;700&display=swap">
+<style>
+  @page { size: 17in 11in; margin: 0; }
+  html, body { margin: 0; background: #F6F2E8; }
+  .poster { position: relative; width: 1632px; height: 1056px; box-sizing: border-box; background: #F6F2E8; color: #1E1C18; font-family: Inter, system-ui, sans-serif; overflow: hidden; font-variant-numeric: tabular-nums; }
+  .abs { position: absolute; }
+  h1 { position: absolute; left: 72px; top: 40px; margin: 0; font-family: Fraunces, Georgia, serif; font-weight: 700; font-size: 48px; line-height: 1; letter-spacing: -0.01em; }
+  .lede { position: absolute; left: 72px; top: 100px; margin: 0; width: 900px; font-size: 15px; line-height: 1.4; color: #4A453C; }
+  .legend { position: absolute; right: 72px; top: 48px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+  .legend div { display: flex; align-items: center; gap: 8px; }
+  .legend span { display: inline-block; width: 22px; height: 10px; }
+  .row-title { position: absolute; left: 72px; top: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .row-title em { font-style: normal; font-weight: 400; letter-spacing: 0; text-transform: none; color: #5E584C; }
+  .tick { width: 64px; text-align: center; font-size: 12px; line-height: 14px; color: #6B6457; top: 130px; }
+  .dot { top: 118px; width: 8px; height: 8px; border-radius: 50%; background: #F6F2E8; box-sizing: border-box; border: 2px solid #1E1C18; }
+  .stem { width: 1px; background: #8C8576; }
+  .label { width: 170px; box-sizing: border-box; padding: 0 6px; line-height: 15px; font-size: 12px; }
+  .label b { display: block; color: #1E1C18; }
+  .label span { display: block; color: #4A453C; white-space: nowrap; }
+  .zoom { top: 111px; height: 22px; box-sizing: border-box; border: 1.5px dashed #1E1C18; }
+  .foot { position: absolute; left: 72px; top: 990px; width: 1488px; display: flex; justify-content: space-between; gap: 24px; font-size: 12px; line-height: 1.45; color: #5E584C; }
+  .foot p { margin: 0; }
+</style>
+</head>
+<body>
+<div class="poster" id="poster">
+  <h1>12,026 Years of Civilization</h1>
+  <p class="lede">Dated in the Holocene Era calendar (HE): year 1 = 10,000 BCE, near the first permanent settlements. Today is 12026 HE. Each row is drawn to a true linear scale; rows 2 and 3 enlarge the dashed boxes in row 1.</p>
+  <div class="legend">
+    <div><span style="background:#6F8A4E"></span>Settlements and farming</div>
+    <div><span style="background:#C08A2E"></span>First cities and states</div>
+    <div><span style="background:#B0533C"></span>Classical empires</div>
+    <div><span style="background:#4F6D8C"></span>Medieval to early modern</div>
+    <div><span style="background:#2E2A3F"></span>Industrial and modern</div>
+  </div>
+  <div class="foot">
+    <p style="max-width: 980px">Conversion: HE = CE year + 10,000. For a BCE year, HE = 10,001 − BCE (there is no year zero). Dates marked ~ are approximate; before about 8000 HE they carry uncertainties of a century or more. Writing appears near 6700 HE, so everything ever written down fits in the last 44% of row 1.</p>
+    <p style="text-align: right">Holocene calendar proposed by Cesare Emiliani, 1993</p>
+  </div>
+</div>
+<script>
+(function () {
+  var L = 72, W = 1488, LW = 170;
+  var ERAS = [[1, 6000, '#6F8A4E'], [6000, 9000, '#C08A2E'], [9000, 10500, '#B0533C'], [10500, 11700, '#4F6D8C'], [11700, 12026, '#2E2A3F']];
+  // [HE year, label, text, side (a=above, b=below), lane, align (r=right)]
+  var ROWS = [
+    { top: 148, title: '1 · The whole span', sub: '1 – 12026 HE (10,000 BCE – today)', d: [1, 12026],
+      ticks: [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000], zooms: [[9000, 11700], [11700, 12026]],
+      ev: [
+        [400, '~400', 'Göbekli Tepe enclosures', 'a', 0], [1000, '~1000', 'Jericho; farming begins', 'b', 0],
+        [2000, '~2000', 'Jericho wall and tower', 'a', 0], [2500, '~2500', 'Çatalhöyük town', 'b', 0],
+        [4500, '~4500', 'Ubaid irrigation, Eridu', 'a', 0], [6000, '~6000', 'Uruk: first true city', 'a', 0],
+        [6700, '~6700', 'Cuneiform writing', 'b', 0], [6900, '~6900', 'Egypt unified', 'a', 1],
+        [7400, '~7400', 'Indus cities; Great Pyramid', 'b', 1], [7670, '~7670', 'Sargon’s Akkadian empire', 'a', 2],
+        [8250, '~8250', 'Hammurabi’s law code', 'b', 0], [8400, '~8400', 'Shang dynasty, China', 'a', 0],
+        [8800, '~8800', 'Bronze Age collapse; Olmec', 'b', 2], [12026, '12026', 'Today', 'a', 1, 'r']
+      ] },
+    { top: 422, title: '2 · Classical to early modern', sub: '9000 – 11700 HE (1000 BCE – 1700 CE), 4.5× zoom', d: [9000, 11700],
+      ticks: [9250, 9500, 9750, 10000, 10250, 10500, 10750, 11000, 11250, 11500], zooms: [],
+      ev: [
+        [9225, '9225', 'First Olympic Games', 'a', 0], [9248, '9248', 'Rome founded (traditional)', 'b', 0],
+        [9450, '~9450', 'Persian Empire (Cyrus)', 'a', 1], [9493, '9493', 'Athenian democracy', 'b', 1],
+        [9670, '~9670', 'Alexander conquers Persia', 'a', 0], [9780, '9780', 'Qin unifies China', 'b', 0],
+        [9974, '9974', 'Roman Empire begins', 'a', 1], [10001, '10001', 'Year 1 CE', 'b', 1],
+        [10250, '~10250', 'Classic Maya city-states', 'a', 0], [10476, '10476', 'Western Rome falls', 'b', 0],
+        [10622, '10622', 'Hijra; Islam expands', 'a', 1], [11050, '~11050', 'Cahokia at its peak', 'a', 0],
+        [11206, '11206', 'Mongol Empire founded', 'b', 0], [11347, '11347', 'Black Death in Europe', 'a', 1],
+        [11440, '~11440', 'Gutenberg’s printing press', 'b', 1, 'r'], [11492, '11492', 'Columbus reaches Americas', 'a', 2, 'r'],
+        [11521, '11521', 'Tenochtitlan falls', 'b', 2, 'r'], [11687, '11687', 'Newton’s Principia', 'a', 0, 'r']
+      ] },
+    { top: 696, title: '3 · Industrial and modern', sub: '11700 – 12026 HE (1700 CE – today), 37× zoom', d: [11700, 12026],
+      ticks: [11750, 11800, 11850, 11900, 11950, 12000], zooms: [],
+      ev: [
+        [11760, '~11760', 'Industrial Revolution', 'a', 0], [11776, '11776', 'American Revolution', 'b', 0],
+        [11789, '11789', 'French Revolution', 'a', 1], [11903, '11903', 'First powered flight', 'b', 0],
+        [11914, '11914–18', 'World War I', 'a', 0], [11939, '11939–45', 'World War II', 'b', 1],
+        [11957, '11957', 'Sputnik', 'a', 1], [11969, '11969', 'Apollo 11 Moon landing', 'b', 0],
+        [11991, '11991', 'World Wide Web goes public', 'a', 0, 'r'], [12007, '~12007', 'Majority of humans urban', 'b', 2, 'r'],
+        [12026, '12026', 'Today', 'a', 2, 'r']
+      ] }
+  ];
+  function el(parent, cls, css, html) {
+    var d = document.createElement('div'); if (cls) d.className = cls;
+    d.style.cssText = css; if (html != null) d.innerHTML = html; parent.appendChild(d); return d;
+  }
+  var poster = document.getElementById('poster');
+  ROWS.forEach(function (r) {
+    var d0 = r.d[0], d1 = r.d[1];
+    function x(y) { return L + (y - d0) / (d1 - d0) * W; }
+    var row = el(poster, 'abs', 'left:0;top:' + r.top + 'px;width:1632px;height:268px');
+    el(row, 'row-title', '', r.title + ' <em>' + r.sub + '</em>');
+    var c = el(row, 'abs', 'left:0;top:22px;width:1632px;height:246px');
+    el(c, 'abs', 'left:72px;top:121px;width:1488px;height:2px;background:#CFC8B8');
+    ERAS.forEach(function (e) {
+      if (e[1] <= d0 || e[0] >= d1) return;
+      var a = x(Math.max(e[0], d0)), b = x(Math.min(e[1], d1));
+      el(c, 'abs', 'left:' + a + 'px;top:116px;width:' + (b - a) + 'px;height:12px;background:' + e[2]);
+    });
+    r.zooms.forEach(function (z) { el(c, 'abs zoom', 'left:' + (x(z[0]) - 2) + 'px;width:' + (x(z[1]) - x(z[0]) + 4) + 'px'); });
+    r.ticks.forEach(function (t) { el(c, 'abs tick', 'left:' + (x(t) - 32) + 'px', String(t)); });
+    r.ev.forEach(function (e) {
+      var px = x(e[0]), right = e[5] === 'r', top, tt, th;
+      if (e[3] === 'a') { top = 78 - 34 * e[4]; tt = top + 30; th = 116 - tt; }
+      else { top = 146 + 34 * e[4]; tt = 128; th = top - 128; }
+      el(c, 'abs stem', 'left:' + px + 'px;top:' + tt + 'px;height:' + th + 'px');
+      el(c, 'abs dot', 'left:' + (px - 4) + 'px');
+      el(c, 'abs label', 'left:' + (right ? px - LW : px) + 'px;top:' + top + 'px;text-align:' + (right ? 'right' : 'left'),
+        '<b>' + e[1] + '</b><span>' + e[2] + '</span>');
+    });
+  });
+})();
+</script>
+</body>
+</html>

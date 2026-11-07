@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Holocene Timeline Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single deep-time strip you pan and zoom like a map, with an overview bar, a detail card, and the list of what is in view. */
+:root {
+  --bg: #EDEFEA;
+  --surface: #F8F9F6;
+  --ink: #1B1E1C;
+  --muted: #565C57;
+  --rule: #C9CEC6;
+  --accent: #2F5D8A;
+  --era1: #557538;
+  --era2: #8C5F10;
+  --era3: #9B4430;
+  --on-era: #FFFFFF;
+  --era4: #4A6D92;
+  --era5: #3A3550;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141716; --surface: #1C201E; --ink: #E7EAE5; --muted: #A2A9A3; --rule: #343A37; --accent: #7FB0E0;
+    --era1: #86A863; --era2: #D19E45; --era3: #C9725A; --era4: #6F93BA; --era5: #9C93C4; --on-era: #141716;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141716; --surface: #1C201E; --ink: #E7EAE5; --muted: #A2A9A3; --rule: #343A37; --accent: #7FB0E0;
+  --era1: #86A863; --era2: #D19E45; --era3: #C9725A; --era4: #6F93BA; --era5: #9C93C4; --on-era: #141716;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 48px;
+}
+.wrap { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+header { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: end; justify-content: space-between; }
+header .titles { min-width: 0; flex: 1 1 420px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.2vw, 44px); line-height: 1.05; margin: 0 0 8px; text-wrap: balance; letter-spacing: -0.01em; }
+header p { margin: 0; color: var(--muted); max-width: 62ch; }
+.counter { font-family: var(--font-data); font-size: 13px; color: var(--muted); text-align: right; }
+.counter strong { display: block; font-family: var(--font-display); font-size: 40px; font-weight: 500; color: var(--ink); line-height: 1; letter-spacing: -0.02em; }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+.chip { font-size: 13px; padding: 6px 12px; border: 1px solid var(--rule); background: var(--surface); border-radius: 999px; min-height: 36px; }
+.chip:hover { border-color: var(--muted); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.controls { display: flex; gap: 6px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 999px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: transparent; padding: 6px 12px; font-size: 13px; min-height: 36px; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.icon-btn { width: 36px; height: 36px; border: 1px solid var(--rule); background: var(--surface); border-radius: 50%; font-size: 18px; line-height: 1; display: inline-grid; place-items: center; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.stage { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.range-line { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; font-family: var(--font-data); font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
+#tl { display: block; width: 100%; height: 400px; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+#tl.dragging { cursor: grabbing; }
+.hint { padding: 8px 14px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--rule); }
+#overview { display: block; width: 100%; height: 44px; cursor: pointer; touch-action: none; }
+.ov-wrap { padding: 10px 14px 12px; border-top: 1px solid var(--rule); }
+.ov-label { font-family: var(--font-data); font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+
+svg text { font-family: var(--font-body); }
+.t-tick { font-family: var(--font-data); font-size: 11px; fill: var(--muted); }
+.t-year { font-family: var(--font-data); font-size: 11px; fill: var(--muted); }
+.t-name { font-size: 13px; fill: var(--ink); font-weight: 500; }
+.ev { cursor: pointer; }
+.ev:hover .t-name, .ev.sel .t-name { fill: var(--accent); }
+.ev .hit { fill: transparent; }
+.ev:focus { outline: none; }
+.ev:focus-visible .dot { stroke: var(--accent); stroke-width: 3; }
+.dot { fill: var(--surface); stroke: var(--ink); stroke-width: 2; }
+.ev.sel .dot { fill: var(--accent); stroke: var(--accent); }
+.stem { stroke: var(--rule); stroke-width: 1; }
+.grid { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 4; }
+.today { stroke: var(--accent); stroke-width: 1.5; }
+.era-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--on-era); }
+
+.lower { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 760px) { .lower { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 20px; min-width: 0; }
+.eyebrow { font-family: var(--font-data); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.swatch { width: 12px; height: 12px; border-radius: 2px; display: inline-block; flex: none; }
+#d-name { font-family: var(--font-display); font-size: 30px; font-weight: 700; line-height: 1.1; margin: 8px 0 12px; text-wrap: balance; }
+.dates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 14px; padding: 12px 0; border-block: 1px solid var(--rule); }
+.dates dt { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.dates dd { margin: 2px 0 0; font-family: var(--font-data); font-size: 16px; font-variant-numeric: tabular-nums; }
+#d-desc { margin: 0 0 12px; max-width: 62ch; }
+.d-era { font-size: 13px; color: var(--muted); margin: 0; }
+.d-nav { display: flex; gap: 8px; margin-top: 16px; }
+.d-nav button { flex: 1; font-size: 13px; padding: 8px 12px; border: 1px solid var(--rule); background: transparent; border-radius: 4px; min-height: 40px; }
+
+h2 { font-family: var(--font-display); font-size: 20px; font-weight: 500; margin: 0 0 4px; }
+.sub { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+#list { list-style: none; margin: 0; padding: 0; max-height: 360px; overflow-y: auto; border-top: 1px solid var(--rule); }
+#list li button { width: 100%; text-align: left; display: grid; grid-template-columns: 8px 88px minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 8px 4px; border: 0; border-bottom: 1px solid var(--rule); background: transparent; font-size: 14px; }
+#list li button:hover { background: var(--bg); }
+#list li button[aria-current="true"] { color: var(--accent); font-weight: 600; }
+#list .yr { font-family: var(--font-data); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+#list .sw { width: 8px; height: 8px; border-radius: 50%; align-self: center; }
+.empty { padding: 12px 4px; color: var(--muted); font-size: 14px; }
+
+.conv { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; margin-bottom: 12px; }
+.conv label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.conv input, .conv select { font: inherit; font-family: var(--font-data); font-size: 15px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 4px; background: var(--bg); color: var(--ink); min-height: 40px; }
+.conv input { width: 9ch; }
+#conv-out { font-family: var(--font-data); font-size: 14px; margin: 0; }
+#conv-out div { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-bottom: 1px dashed var(--rule); }
+#conv-out span:first-child { color: var(--muted); font-family: var(--font-body); font-size: 13px; }
+.conv-go { font-size: 13px; padding: 8px 12px; border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 4px; min-height: 40px; margin-top: 10px; }
+.foot { font-size: 12px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="titles">
+      <h1>12,026 years of civilization</h1>
+      <p>Every date here uses the Holocene Era calendar (HE), where year 1 is 10,000 BCE, around the first permanent settlements. The strip is drawn to a true linear scale: drag to pan, scroll or pinch to zoom.</p>
+    </div>
+    <div class="counter"><strong>12026</strong>HE · this year</div>
+  </header>
+
+  <div class="toolbar">
+    <div class="chips" id="presets" role="group" aria-label="Jump to a period"></div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Date style">
+        <button type="button" id="mode-he" aria-pressed="true">HE</button>
+        <button type="button" id="mode-greg" aria-pressed="false">BCE / CE</button>
+      </div>
+      <button type="button" class="icon-btn" id="zoom-out" aria-label="Zoom out">−</button>
+      <button type="button" class="icon-btn" id="zoom-in" aria-label="Zoom in">+</button>
+    </div>
+  </div>
+
+  <section class="stage" aria-label="Timeline">
+    <div class="range-line"><span id="range-text"></span><span id="scale-text"></span></div>
+    <svg id="tl" role="img" aria-label="Zoomable timeline of human civilization"></svg>
+    <div class="ov-wrap">
+      <div class="ov-label">Overview · whole span, box shows what is in view</div>
+      <svg id="overview" aria-hidden="true"></svg>
+    </div>
+    <div class="hint">Tip: tap a dot or a list entry to read about it. Keyboard: arrow keys pan, + and − zoom.</div>
+  </section>
+
+  <div class="lower">
+    <article class="card" aria-live="polite">
+      <div class="eyebrow"><span class="swatch" id="d-swatch"></span><span id="d-era-name"></span></div>
+      <h2 id="d-name" style="font-family: var(--font-display)"></h2>
+      <dl class="dates">
+        <div><dt>Holocene</dt><dd id="d-he"></dd></div>
+        <div><dt>Gregorian</dt><dd id="d-greg"></dd></div>
+        <div><dt>Years ago</dt><dd id="d-ago"></dd></div>
+      </dl>
+      <p id="d-desc"></p>
+      <p class="d-era" id="d-pos"></p>
+      <div class="d-nav">
+        <button type="button" id="prev">← Earlier event</button>
+        <button type="button" id="next">Later event →</button>
+      </div>
+    </article>
+
+    <div style="display: flex; flex-direction: column; gap: 20px; min-width: 0">
+      <section class="card">
+        <h2>In view</h2>
+        <p class="sub" id="list-sub"></p>
+        <ul id="list"></ul>
+      </section>
+      <section class="card">
+        <h2>Convert a year</h2>
+        <p class="sub">HE = CE + 10,000. For BCE, HE = 10,001 − BCE, since there is no year zero.</p>
+        <form class="conv" id="conv-form">
+          <label for="conv-year">Year<input id="conv-year" type="number" inputmode="numeric" value="1066" min="1"></label>
+          <label for="conv-era">Calendar<select id="conv-era"><option value="ce">CE</option><option value="bce">BCE</option><option value="he">HE</option></select></label>
+        </form>
+        <div id="conv-out"></div>
+        <button type="button" class="conv-go" id="conv-go">Show on timeline</button>
+      </section>
+    </div>
+  </div>
+  <p class="foot">Dates marked ~ are approximate; before about 8000 HE they carry uncertainties of a century or more. The Holocene calendar was proposed by geologist Cesare Emiliani in 1993.</p>
+</div>
+
+<script>
+(function () {
+  var NOW = 12026;
+  var ERAS = [
+    { a: 1, b: 6000, name: 'Settlements and farming', v: '--era1' },
+    { a: 6000, b: 9000, name: 'First cities and states', v: '--era2' },
+    { a: 9000, b: 10500, name: 'Classical empires', v: '--era3' },
+    { a: 10500, b: 11700, name: 'Medieval to early modern', v: '--era4' },
+    { a: 11700, b: NOW + 1, name: 'Industrial and modern', v: '--era5' }
+  ];
+  // [HE year, approximate?, name, description]
+  var EV = [
+    [400, 1, 'Göbekli Tepe', 'Hunter-gatherers in southeastern Turkey carve and raise T-shaped stone pillars in circular enclosures, before farming had taken hold there.'],
+    [1000, 1, 'Farming begins', 'Wheat, barley, sheep and goats are domesticated in the Fertile Crescent. Jericho becomes a permanent settlement.'],
+    [2000, 1, 'Jericho wall and tower', 'A stone wall and an 8.5 m stone tower, among the oldest monumental structures built inside a settlement.'],
+    [2500, 1, 'Çatalhöyük', 'A dense town of several thousand people in Anatolia. Houses were packed wall to wall with no streets, and people entered through the roof.'],
+    [3000, 1, 'Rice farming in China', 'Rice is domesticated in the Yangtze valley, one of several independent origins of agriculture.'],
+    [4500, 1, 'Ubaid irrigation', 'Farmers in southern Mesopotamia dig irrigation canals; temple centers grow at Eridu.'],
+    [6000, 1, 'Uruk: the first true city', 'Uruk grows to tens of thousands of people, with specialized crafts, monumental temples and a bureaucracy to run them.'],
+    [6500, 1, 'The wheel', 'Wheeled carts appear in Mesopotamia and Europe at nearly the same time.'],
+    [6700, 1, 'Cuneiform writing', 'Writing develops in Sumer, first as a way to keep accounts of grain, livestock and labor.'],
+    [6900, 1, 'Egypt unified', 'Upper and Lower Egypt are joined under the first pharaohs.'],
+    [7400, 1, 'Indus Valley cities', 'Harappa and Mohenjo-daro are laid out on grids, with standardized bricks and covered drains.'],
+    [7441, 1, 'Great Pyramid of Giza', 'Built for the pharaoh Khufu; it remained the tallest human-made structure for nearly 4,000 years.'],
+    [7667, 1, 'Sargon of Akkad', 'Sargon conquers the Sumerian city-states and forms the first empire to rule many cities at once.'],
+    [8247, 1, 'Hammurabi’s law code', 'The Babylonian king publishes 282 laws carved on a stone stele, with penalties scaled by social rank.'],
+    [8400, 1, 'Shang dynasty', 'A Bronze Age state in the Yellow River valley. Its oracle bones carry the earliest known Chinese writing.'],
+    [8800, 1, 'Bronze Age collapse', 'Palace economies across the eastern Mediterranean, including the Hittites and Mycenaeans, fall within a few decades.'],
+    [8801, 1, 'Olmec civilization', 'The Olmec of Mexico’s Gulf Coast build ceremonial centers and carve colossal stone heads.'],
+    [9225, 0, 'First Olympic Games', 'The first recorded games at Olympia; Greeks later counted years in four-year Olympiads.'],
+    [9248, 0, 'Rome founded', 'The traditional founding date of Rome, later used by Romans as the start of their year count.'],
+    [9451, 1, 'Persian Empire', 'Cyrus the Great founds the Achaemenid Empire, which soon stretches from Egypt to the Indus.'],
+    [9493, 0, 'Athenian democracy', 'Cleisthenes reorganizes Athens so that its citizens vote directly on laws.'],
+    [9500, 1, 'Confucius and the Buddha', 'Confucius in China and the Buddha in northern India teach within about a century of each other.'],
+    [9671, 0, 'Alexander conquers Persia', 'Alexander of Macedon defeats the Persian Empire and spreads Greek culture as far as Central Asia.'],
+    [9780, 0, 'Qin unifies China', 'The Qin state conquers its rivals and standardizes writing, weights, coinage and axle widths.'],
+    [9974, 0, 'Roman Empire begins', 'Octavian takes the title Augustus; Rome’s republic becomes an empire.'],
+    [10001, 0, 'Year 1 CE', 'The first year of the Common Era. The Gregorian count has no year zero, so 1 BCE is followed directly by 1 CE.'],
+    [10250, 1, 'Classic Maya city-states', 'Tikal, Calakmul and dozens of other Maya cities flourish, with a written script and precise calendars.'],
+    [10476, 0, 'Western Rome falls', 'The last western Roman emperor is deposed; the eastern empire continues from Constantinople for another thousand years.'],
+    [10622, 0, 'The Hijra', 'Muhammad moves from Mecca to Medina, the starting point of the Islamic calendar. Islam expands rapidly over the next century.'],
+    [10800, 0, 'Charlemagne crowned', 'Charlemagne is crowned emperor in Rome, uniting much of western Europe.'],
+    [11050, 1, 'Cahokia at its peak', 'Near modern St. Louis, Cahokia is the largest city in North America north of Mexico, built around large earthen mounds.'],
+    [11206, 0, 'Mongol Empire', 'Genghis Khan unites the Mongol tribes; his empire becomes the largest contiguous land empire in history.'],
+    [11347, 0, 'Black Death', 'Plague reaches Europe and kills roughly a third to half of its population within a few years.'],
+    [11440, 1, 'Printing press', 'Gutenberg’s movable-type press makes books cheap enough to spread literacy and new ideas quickly.'],
+    [11492, 0, 'Columbus reaches the Americas', 'The start of sustained contact between Europe and the Americas, with lasting exchange of crops, animals and disease.'],
+    [11521, 0, 'Tenochtitlan falls', 'The Aztec capital, then one of the largest cities in the world, falls to Spanish forces and their Indigenous allies.'],
+    [11687, 0, 'Newton’s Principia', 'Newton publishes his laws of motion and universal gravitation, the foundation of classical physics.'],
+    [11760, 1, 'Industrial Revolution', 'Steam power and mechanized textile production begin in Britain, then spread worldwide.'],
+    [11776, 0, 'American Revolution', 'The thirteen colonies declare independence from Britain.'],
+    [11789, 0, 'French Revolution', 'Revolution in France overturns the monarchy and spreads ideas of popular sovereignty across Europe.'],
+    [11903, 0, 'First powered flight', 'The Wright brothers fly a powered, controlled airplane at Kitty Hawk, North Carolina.'],
+    [11914, 0, 'World War I', 'Fought from 11914 to 11918 HE (1914–1918 CE); about 20 million deaths.'],
+    [11939, 0, 'World War II', 'Fought from 11939 to 11945 HE (1939–1945 CE); the deadliest conflict in history.'],
+    [11957, 0, 'Sputnik', 'The Soviet Union launches the first artificial satellite into orbit.'],
+    [11969, 0, 'Apollo 11', 'Humans first walk on the Moon.'],
+    [11991, 0, 'World Wide Web goes public', 'Tim Berners-Lee’s web software is opened to the public, building on the existing internet.'],
+    [12007, 1, 'Majority urban', 'For the first time, more than half of all people live in cities, about 12,000 years after the first permanent settlements.'],
+    [12026, 0, 'Today', 'The present year: 12026 HE, or 2026 CE.']
+  ].map(function (e, i) { return { i: i, y: e[0], approx: !!e[1], name: e[2], desc: e[3] }; });
+
+  var PRESETS = [
+    ['Whole span', 1, NOW],
+    ['Since the first cities', 5600, NOW],
+    ['Since writing', 6500, NOW],
+    ['Classical world', 9150, 10550],
+    ['Last 1,000 years', 11000, NOW],
+    ['Industrial age', 11700, NOW]
+  ];
+
+  var MIN = -400, MAX = NOW + 400, MINSPAN = 12;
+  var v0 = 1, v1 = NOW, mode = 'he', selected = 6;
+  var tl = document.getElementById('tl'), ov = document.getElementById('overview');
+  var css = getComputedStyle(document.documentElement);
+  function cv(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  function eraOf(y) { for (var i = 0; i < ERAS.length; i++) if (y < ERAS[i].b) return ERAS[i]; return ERAS[ERAS.length - 1]; }
+
+  function greg(y) { return y >= 10001 ? (y - 10000) + ' CE' : (10001 - y) + ' BCE'; }
+  function fmt(y, approx) {
+    var r = Math.round(y);
+    var s = mode === 'he' ? String(r) : greg(r);
+    return (approx ? '~' : '') + s;
+  }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  function clampView(a, b) {
+    var span = Math.max(MINSPAN, Math.min(b - a, MAX - MIN));
+    if (a < MIN) { a = MIN; }
+    if (a + span > MAX) { a = MAX - span; }
+    return [a, a + span];
+  }
+  function niceStep(span, target) {
+    var raw = span / target, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
+    var s = m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10;
+    return s * p;
+  }
+  function textW(s, px) { return s.length * px * 0.58; }
+
+  function render() {
+    var W = tl.clientWidth || 800, H = 400, AX = 200;
+    var k = W / (v1 - v0);
+    function x(y) { return (y - v0) * k; }
+    var out = [];
+    // grid ticks
+    var step = niceStep(v1 - v0, Math.max(3, Math.floor(W / 110)));
+    var t0 = Math.ceil(v0 / step) * step;
+    for (var t = t0; t <= v1; t += step) {
+      var tx = x(t);
+      out.push('<line class="grid" x1="' + tx + '" x2="' + tx + '" y1="24" y2="' + (H - 12) + '"/>');
+      var lbl = mode === 'he' ? String(Math.round(t)) : (t >= 10001 ? (Math.round(t) - 10000) + ' CE' : (t <= 10000 ? (10001 - Math.round(t)) + ' BCE' : ''));
+      out.push('<text class="t-tick" x="' + tx + '" y="16" text-anchor="middle">' + lbl + '</text>');
+    }
+    // era bands
+    ERAS.forEach(function (e) {
+      var a = Math.max(e.a, v0), b = Math.min(e.b, v1);
+      if (b <= a) return;
+      var xa = x(a), xb = x(b);
+      out.push('<rect x="' + xa + '" y="' + (AX - 9) + '" width="' + (xb - xa) + '" height="18" fill="var(' + e.v + ')"/>');
+      var w = xb - xa;
+      if (w > textW(e.name, 11) + 24) {
+        var cx = xa + 10;
+        out.push('<text class="era-label" x="' + cx + '" y="' + (AX + 4) + '">' + esc(e.name.toUpperCase()) + '</text>');
+      }
+    });
+    // today line
+    if (NOW >= v0 && NOW <= v1) out.push('<line class="today" x1="' + x(NOW) + '" x2="' + x(NOW) + '" y1="24" y2="' + (H - 12) + '"/>');
+
+    // events with lane packing
+    var LANES = [['a', 0], ['b', 0], ['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]];
+    var occ = LANES.map(function () { return []; });
+    var vis = EV.filter(function (e) { return e.y >= v0 && e.y <= v1; });
+    // place selected first so it always gets a label
+    var order = vis.slice().sort(function (p, q) { return (q.i === selected) - (p.i === selected) || p.y - q.y; });
+    var placed = {};
+    order.forEach(function (e) {
+      var px = x(e.y);
+      var yl = fmt(e.y, e.approx);
+      var w = Math.max(textW(e.name, 13) * 1.08, textW(yl, 11) * 1.1) + 14;
+      var left = px + w > W - 4 ? px - w : px;
+      if (left < 2) left = 2;
+      for (var li = 0; li < LANES.length; li++) {
+        var ok = occ[li].every(function (iv) { return left + w + 6 < iv[0] || left > iv[1] + 6; });
+        if (ok) { occ[li].push([left, left + w]); placed[e.i] = { lane: LANES[li], left: left, w: w, right: left < px }; return; }
+      }
+    });
+    vis.forEach(function (e) {
+      var px = x(e.y), p = placed[e.i], sel = e.i === selected ? ' sel' : '';
+      var g = '<g class="ev' + sel + '" data-i="' + e.i + '" tabindex="0" role="button" aria-label="' + esc(e.name + ', ' + fmt(e.y, e.approx)) + '">';
+      if (p) {
+        var above = p.lane[0] === 'a', n = p.lane[1];
+        var ly = above ? AX - 36 - n * 40 : AX + 30 + n * 40;
+        var sy1 = above ? ly + 6 : AX + 9, sy2 = above ? AX - 9 : ly - 14;
+        g += '<line class="stem" x1="' + px + '" x2="' + px + '" y1="' + sy1 + '" y2="' + sy2 + '"/>';
+        var anchor = p.right ? 'end' : 'start', tx = p.right ? px - 6 : px + 6;
+        g += '<rect class="hit" x="' + p.left + '" y="' + (ly - 14) + '" width="' + p.w + '" height="34"/>';
+        g += '<text class="t-year" x="' + tx + '" y="' + ly + '" text-anchor="' + anchor + '">' + esc(fmt(e.y, e.approx)) + '</text>';
+        g += '<text class="t-name" x="' + tx + '" y="' + (ly + 16) + '" text-anchor="' + anchor + '">' + esc(e.name) + '</text>';
+      }
+      g += '<circle class="hit" cx="' + px + '" cy="' + AX + '" r="12"/>';
+      g += '<circle class="dot" cx="' + px + '" cy="' + AX + '" r="5"/></g>';
+      out.push(g);
+    });
+    tl.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    tl.innerHTML = out.join('');
+
+    renderOverview();
+    document.getElementById('range-text').textContent = 'Showing ' + fmt(Math.max(v0, 1)) + ' – ' + fmt(Math.min(v1, NOW)) + (mode === 'he' ? ' HE' : '');
+    var span = v1 - v0;
+    document.getElementById('scale-text').textContent = Math.round(span).toLocaleString() + ' years across · 1 px ≈ ' + (span / W < 1 ? (span / W).toFixed(2) : Math.round(span / W)) + ' yr';
+    renderList(vis);
+    markPresets();
+  }
+
+  function renderOverview() {
+    var W = ov.clientWidth || 800, H = 44, k = W / (NOW - 1), out = [];
+    ERAS.forEach(function (e) {
+      out.push('<rect x="' + (e.a - 1) * k + '" y="14" width="' + (Math.min(e.b, NOW) - e.a) * k + '" height="16" fill="var(' + e.v + ')"/>');
+    });
+    var a = (Math.max(v0, 1) - 1) * k, b = (Math.min(v1, NOW) - 1) * k;
+    out.push('<rect x="' + (a - 1) + '" y="6" width="' + Math.max(3, b - a + 2) + '" height="32" fill="none" stroke="var(--ink)" stroke-width="2"/>');
+    ov.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    ov.innerHTML = out.join('');
+  }
+
+  function renderList(vis) {
+    var ul = document.getElementById('list');
+    document.getElementById('list-sub').textContent = vis.length + ' of ' + EV.length + ' events in the current view';
+    if (!vis.length) { ul.innerHTML = '<li class="empty">No events in this stretch. Zoom out or pan to find some.</li>'; return; }
+    ul.innerHTML = vis.map(function (e) {
+      return '<li><button type="button" data-i="' + e.i + '"' + (e.i === selected ? ' aria-current="true"' : '') + '><span class="sw" style="background: var(' + eraOf(e.y).v + ')"></span><span class="yr">' + esc(fmt(e.y, e.approx)) + '</span><span>' + esc(e.name) + '</span></button></li>';
+    }).join('');
+  }
+
+  function renderDetail() {
+    var e = EV[selected], era = eraOf(e.y);
+    document.getElementById('d-swatch').style.background = 'var(' + era.v + ')';
+    document.getElementById('d-era-name').textContent = era.name;
+    document.getElementById('d-name').textContent = e.name;
+    document.getElementById('d-he').textContent = (e.approx ? '~' : '') + e.y;
+    document.getElementById('d-greg').textContent = (e.approx ? '~' : '') + greg(e.y);
+    document.getElementById('d-ago').textContent = e.y === NOW ? '0' : (e.approx ? '~' : '') + (NOW - e.y).toLocaleString();
+    document.getElementById('d-desc').textContent = e.desc;
+    var pct = ((e.y - 1) / (NOW - 1) * 100);
+    document.getElementById('d-pos').textContent = e.y === NOW ? 'The right-hand edge of the whole timeline.' : Math.round(pct) + '% of the way from year 1 to today; ' + (100 - pct < 1 ? (100 - pct).toFixed(1) : Math.round(100 - pct)) + '% of the span comes after it.';
+    document.getElementById('prev').disabled = selected === 0;
+    document.getElementById('next').disabled = selected === EV.length - 1;
+  }
+
+  // animated view changes
+  var anim = null, reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function goTo(a, b) {
+    var c = clampView(a, b), s0 = v0, s1 = v1;
+    if (anim) cancelAnimationFrame(anim);
+    if (reduce) { v0 = c[0]; v1 = c[1]; render(); return; }
+    var start = performance.now(), D = 450;
+    // interpolate in log-span so zooms feel even
+    var ls0 = Math.log(s1 - s0), ls1 = Math.log(c[1] - c[0]), m0 = (s0 + s1) / 2, m1 = (c[0] + c[1]) / 2;
+    function f(now) {
+      var t = Math.min(1, (now - start) / D), e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      var span = Math.exp(ls0 + (ls1 - ls0) * e), mid = m0 + (m1 - m0) * e;
+      v0 = mid - span / 2; v1 = mid + span / 2; render();
+      if (t < 1) anim = requestAnimationFrame(f); else anim = null;
+    }
+    anim = requestAnimationFrame(f);
+  }
+  function zoomAt(factor, yCenter) {
+    var a = yCenter - (yCenter - v0) * factor, b = yCenter + (v1 - yCenter) * factor;
+    var c = clampView(a, b); v0 = c[0]; v1 = c[1]; render();
+  }
+  function pad(a, b) { var p = (b - a) * 0.03; return [a - p, b + p]; }
+
+  // presets
+  var presetBox = document.getElementById('presets');
+  PRESETS.forEach(function (p, i) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.textContent = p[0]; b.dataset.i = i; b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', function () { var r = pad(p[1], p[2]); goTo(r[0], r[1]); });
+    presetBox.appendChild(b);
+  });
+  function markPresets() {
+    Array.prototype.forEach.call(presetBox.children, function (b, i) {
+      var r = pad(PRESETS[i][1], PRESETS[i][2]), c = clampView(r[0], r[1]);
+      var on = Math.abs(c[0] - v0) < (v1 - v0) * 0.01 && Math.abs(c[1] - v1) < (v1 - v0) * 0.01;
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  function select(i, focusView) {
+    selected = Math.max(0, Math.min(EV.length - 1, i));
+    var y = EV[selected].y;
+    if (focusView && (y < v0 || y > v1)) {
+      var span = v1 - v0; goTo(y - span / 2, y + span / 2);
+    } else render();
+    renderDetail();
+  }
+
+  // pointer interaction on timeline
+  var pts = new Map(), dragStart = null, pinchStart = null, moved = false;
+  function yAt(clientX) { var r = tl.getBoundingClientRect(); return v0 + (clientX - r.left) / r.width * (v1 - v0); }
+  tl.addEventListener('pointerdown', function (ev) {
+    tl.setPointerCapture(ev.pointerId);
+    pts.set(ev.pointerId, ev.clientX);
+    moved = false;
+    if (anim) { cancelAnimationFrame(anim); anim = null; }
+    if (pts.size === 1) dragStart = { x: ev.clientX, v0: v0, v1: v1 };
+    if (pts.size === 2) {
+      var xs = Array.from(pts.values());
+      pinchStart = { d: Math.abs(xs[0] - xs[1]) || 1, mid: yAt((xs[0] + xs[1]) / 2), v0: v0, v1: v1 };
+    }
+  });
+  tl.addEventListener('pointermove', function (ev) {
+    if (!pts.has(ev.pointerId)) return;
+    pts.set(ev.pointerId, ev.clientX);
+    var r = tl.getBoundingClientRect();
+    if (pts.size === 2 && pinchStart) {
+      var xs = Array.from(pts.values()), d = Math.abs(xs[0] - xs[1]) || 1, f = pinchStart.d / d;
+      var a = pinchStart.mid - (pinchStart.mid - pinchStart.v0) * f, b = pinchStart.mid + (pinchStart.v1 - pinchStart.mid) * f;
+      var c = clampView(a, b); v0 = c[0]; v1 = c[1]; moved = true; render(); return;
+    }
+    if (dragStart) {
+      var dx = ev.clientX - dragStart.x;
+      if (Math.abs(dx) > 3) { moved = true; tl.classList.add('dragging'); }
+      var dy = -dx / r.width * (dragStart.v1 - dragStart.v0);
+      var c2 = clampView(dragStart.v0 + dy, dragStart.v1 + dy); v0 = c2[0]; v1 = c2[1]; render();
+    }
+  });
+  function endPtr(ev) {
+    pts.delete(ev.pointerId);
+    if (pts.size < 2) pinchStart = null;
+    if (pts.size === 1) { var x0 = Array.from(pts.values())[0]; dragStart = { x: x0, v0: v0, v1: v1 }; }
+    if (pts.size === 0) { dragStart = null; tl.classList.remove('dragging'); }
+  }
+  tl.addEventListener('pointerup', function (ev) {
+    if (!moved) {
+      var g = ev.target.closest && ev.target.closest('.ev');
+      if (g) select(+g.dataset.i, false);
+    }
+    endPtr(ev);
+  });
+  tl.addEventListener('pointercancel', endPtr);
+  tl.addEventListener('wheel', function (ev) {
+    ev.preventDefault();
+    if (anim) { cancelAnimationFrame(anim); anim = null; }
+    if (Math.abs(ev.deltaX) > Math.abs(ev.deltaY) && !ev.ctrlKey) {
+      var r = tl.getBoundingClientRect(), dy = ev.deltaX / r.width * (v1 - v0);
+      var c = clampView(v0 + dy, v1 + dy); v0 = c[0]; v1 = c[1]; render(); return;
+    }
+    zoomAt(Math.exp(ev.deltaY * (ev.ctrlKey ? 0.01 : 0.0018)), yAt(ev.clientX));
+  }, { passive: false });
+  tl.addEventListener('keydown', function (ev) {
+    var g = ev.target.closest && ev.target.closest('.ev');
+    if (g && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); select(+g.dataset.i, false); }
+  });
+  document.addEventListener('keydown', function (ev) {
+    if (/INPUT|SELECT|TEXTAREA/.test(ev.target.tagName)) return;
+    var span = v1 - v0;
+    if (ev.key === 'ArrowLeft') { ev.preventDefault(); goTo(v0 - span * 0.2, v1 - span * 0.2); }
+    else if (ev.key === 'ArrowRight') { ev.preventDefault(); goTo(v0 + span * 0.2, v1 + span * 0.2); }
+    else if (ev.key === '+' || ev.key === '=') { var m = (v0 + v1) / 2; goTo(m - span * 0.3, m + span * 0.3); }
+    else if (ev.key === '-' || ev.key === '_') { var m2 = (v0 + v1) / 2; goTo(m2 - span, m2 + span); }
+  });
+
+  // overview: click or drag to move the window
+  function ovMove(clientX) {
+    var r = ov.getBoundingClientRect(), y = 1 + (clientX - r.left) / r.width * (NOW - 1), span = v1 - v0;
+    var c = clampView(y - span / 2, y + span / 2); v0 = c[0]; v1 = c[1]; render();
+  }
+  var ovDrag = false;
+  ov.addEventListener('pointerdown', function (ev) { ovDrag = true; ov.setPointerCapture(ev.pointerId); ovMove(ev.clientX); });
+  ov.addEventListener('pointermove', function (ev) { if (ovDrag) ovMove(ev.clientX); });
+  ov.addEventListener('pointerup', function () { ovDrag = false; });
+  ov.addEventListener('pointercancel', function () { ovDrag = false; });
+
+  document.getElementById('zoom-in').addEventListener('click', function () { var m = (v0 + v1) / 2, s = (v1 - v0) * 0.3; goTo(m - s, m + s); });
+  document.getElementById('zoom-out').addEventListener('click', function () { var m = (v0 + v1) / 2, s = (v1 - v0); goTo(m - s, m + s); });
+  document.getElementById('list').addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (b) select(+b.dataset.i, false); });
+  document.getElementById('prev').addEventListener('click', function () { select(selected - 1, true); });
+  document.getElementById('next').addEventListener('click', function () { select(selected + 1, true); });
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById('mode-he').setAttribute('aria-pressed', m === 'he');
+    document.getElementById('mode-greg').setAttribute('aria-pressed', m === 'greg');
+    render();
+  }
+  document.getElementById('mode-he').addEventListener('click', function () { setMode('he'); });
+  document.getElementById('mode-greg').addEventListener('click', function () { setMode('greg'); });
+
+  // converter
+  var convHE = null;
+  function convert() {
+    var n = parseInt(document.getElementById('conv-year').value, 10), era = document.getElementById('conv-era').value, out = document.getElementById('conv-out');
+    if (!isFinite(n) || n < 1) { out.innerHTML = '<div><span>Enter a whole year of 1 or more.</span><span></span></div>'; convHE = null; return; }
+    var he = era === 'he' ? n : era === 'ce' ? n + 10000 : 10001 - n;
+    convHE = he;
+    var rows = [['Holocene', he >= 1 ? he + ' HE' : 'before year 1 HE']];
+    rows.push(['Gregorian', greg(he)]);
+    rows.push(['Years before 12026', (NOW - he).toLocaleString()]);
+    var e = eraOf(Math.max(1, he));
+    rows.push(['Period', he > NOW ? 'In the future' : e.name]);
+    out.innerHTML = rows.map(function (r) { return '<div><span>' + esc(r[0]) + '</span><span>' + esc(r[1]) + '</span></div>'; }).join('');
+    document.getElementById('conv-go').disabled = !(he >= MIN && he <= MAX);
+  }
+  document.getElementById('conv-form').addEventListener('input', convert);
+  document.getElementById('conv-form').addEventListener('submit', function (ev) { ev.preventDefault(); });
+  document.getElementById('conv-go').addEventListener('click', function () {
+    if (convHE == null) return;
+    var span = Math.min(v1 - v0, 600); goTo(convHE - span / 2, convHE + span / 2);
+  });
+
+  window.addEventListener('resize', render);
+  var r0 = pad(1, NOW); var c0 = clampView(r0[0], r0[1]); v0 = c0[0]; v1 = c0[1];
+  render(); renderDetail(); convert();
+})();
+</script>
+</body>
+</html>
