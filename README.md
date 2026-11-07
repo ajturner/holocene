@@ -52,7 +52,7 @@ These period boundaries are conventions for organizing the timeline, not hard hi
 
 ### Interactive explorer
 
-Open `index.html` in a browser; it's a single self-contained page with no build step. To publish it, enable **GitHub Pages** for this repository (Settings → Pages → deploy from the `main` branch, root folder). The page will then be served at `https://ajturner.github.io/holocene/`.
+Open `index.html` in a browser; it's a single self-contained page with no build step. The live site is at **https://ajturner.github.io/holocene/**. It is deployed by GitHub Actions ([`.github/workflows/pages.yml`](.github/workflows/pages.yml)) on every push to `main`.
 
 Controls:
 
